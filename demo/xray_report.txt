@@ -1,0 +1,18 @@
+Radiology Report — Chest X-Ray
+Patient: John Doe | DOB: 1972-03-14 | Date: 2024-04-10
+Radiologist: Dr. Priya Sharma
+
+Findings:
+- Cardiac silhouette is mildly enlarged (cardiomegaly grade I).
+- No acute consolidation, pleural effusion, or pneumothorax identified.
+- Mild pulmonary vascular congestion is noted in the upper lobes, suggesting early left ventricular dysfunction.
+- Aortic knuckle appears normal.
+- Bony thorax is intact.
+
+Impression:
+1. Mild cardiomegaly — correlate with clinical symptoms of chest pain and ECG findings.
+2. Early signs of pulmonary venous hypertension — echocardiogram recommended.
+3. No acute pulmonary infiltrate or consolidation.
+
+Recommendation:
+Echocardiogram for assessment of left ventricular ejection fraction (LVEF). Clinical correlation with troponin and ECG findings is strongly advised.

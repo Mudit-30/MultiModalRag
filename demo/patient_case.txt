@@ -1,0 +1,26 @@
+Patient Name: John Doe
+Age: 52
+Chief Complaint: Persistent chest pain for 3 days, radiating to left arm. Mild shortness of breath.
+
+History of Present Illness:
+Patient John Doe presented on April 10, 2024, with a 3-day history of chest pain described as pressure-like, rated 7/10. 
+Pain radiates to the left arm and jaw. Associated with mild dyspnea on exertion. No fever or cough.
+Patient has a history of Type 2 Diabetes diagnosed in 2018 and Hypertension since 2015.
+Current medications: Metformin 500mg twice daily, Amlodipine 5mg once daily.
+
+Physical Examination:
+- BP: 158/95 mmHg
+- HR: 88 bpm
+- SpO2: 97% on room air
+- Mild diaphoresis observed
+
+Assessment:
+Suspected Acute Coronary Syndrome (ACS). Referred for ECG and troponin levels.
+ECG shows ST depression in leads V4-V6 consistent with NSTEMI.
+
+Plan:
+1. Admit to cardiac care unit.
+2. Administer Aspirin 325mg loading dose.
+3. Start Heparin infusion per protocol.
+4. Cardiology consult requested.
+5. Schedule echocardiogram within 24 hours.

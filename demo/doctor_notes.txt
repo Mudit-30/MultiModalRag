@@ -1,0 +1,22 @@
+Cardiology Consultation Note
+Patient: John Doe | Date: 2024-04-10 | Consultant: Dr. Arjun Mehta, Cardiologist
+
+Reason for Consult:
+Chest pain with ECG changes consistent with NSTEMI, referred by Emergency Medicine.
+
+History & Assessment:
+Mr. Doe is a 52-year-old male with Type 2 Diabetes and Hypertension presenting with NSTEMI.
+ECG shows ST depression in V4-V6. Troponin I elevated at 0.8 ng/mL (normal < 0.04).
+Chest X-ray shows mild cardiomegaly and pulmonary venous hypertension.
+
+Treatment Plan:
+1. Dual antiplatelet therapy: Aspirin 325mg (loading) + Clopidogrel 600mg (loading), followed by maintenance doses.
+2. Heparin infusion: Unfractionated heparin per weight-based protocol.
+3. Beta-blocker: Metoprolol 25mg twice daily to reduce myocardial oxygen demand.
+4. High-intensity statin: Atorvastatin 80mg once at night to stabilize plaque.
+5. Strict blood glucose monitoring given Diabetes Mellitus history — target glucose 140-180 mg/dL during admission.
+6. Urgent echocardiogram scheduled for LVEF assessment.
+7. Coronary angiography planned within 24 hours to evaluate coronary artery disease severity.
+
+Prognosis:
+Guarded. Risk stratification using GRACE score: High risk. Revascularization likely needed.
