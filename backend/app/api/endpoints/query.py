@@ -29,6 +29,7 @@ class QueryResponse(BaseModel):
     confidence: float = 0.0
     trace:      Dict[str, Any]
     citations:  Optional[List[Dict[str, Any]]] = []
+    graph_data: Optional[Dict[str, Any]] = None
 
 
 @router.post("/agentic", response_model=QueryResponse)
@@ -43,6 +44,7 @@ async def agentic_query(request: QueryRequest):
             confidence=result.get("confidence", 0.0),
             trace=result["trace"],
             citations=result.get("citations", []),
+            graph_data=result.get("graph_data", None),
         )
     except Exception as e:
         logger.exception("Query failed: %s", e)

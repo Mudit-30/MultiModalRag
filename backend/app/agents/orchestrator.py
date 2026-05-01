@@ -96,11 +96,11 @@ class QueryOrchestrator:
     # ── Main entry point ──────────────────────────────────────────────────────
 
     async def process_query(self, query: str) -> Dict[str, Any]:
-        # 0. Semantic cache
-        cached = semantic_cache.get(query)
-        if cached:
-            logger.info("[Orchestrator] Cache hit for query")
-            return cached
+        # 0. Semantic cache (Disabled to prevent hallucinations/wrong references)
+        # cached = semantic_cache.get(query)
+        # if cached:
+        #     logger.info("[Orchestrator] Cache hit for query")
+        #     return cached
 
         trace: Dict[str, Any] = {"timeline": []}
 
@@ -217,6 +217,23 @@ class QueryOrchestrator:
                 feedback_history.append(val_feedback)
                 logger.info("[SRLM] Regenerating with feedback: %s", val_feedback[:120])
 
+        # Collect merged graph data
+        merged_graph = {"nodes": [], "links": []}
+        seen_graph_nodes = set()
+        seen_graph_links = set()
+        for r in search_results:
+            gd = r.get("graph_data")
+            if gd:
+                for node in gd.get("nodes", []):
+                    if node["id"] not in seen_graph_nodes:
+                        seen_graph_nodes.add(node["id"])
+                        merged_graph["nodes"].append(node)
+                for link in gd.get("links", []):
+                    l_key = f"{link.get('source')}->{link.get('target')}"
+                    if l_key not in seen_graph_links:
+                        seen_graph_links.add(l_key)
+                        merged_graph["links"].append(link)
+
         # ── Build response ────────────────────────────────────────────────────
         response = {
             "answer":     answer,
@@ -224,6 +241,7 @@ class QueryOrchestrator:
             "confidence": round(confidence, 3),
             "trace":      trace,
             "citations":  unique_chunks[:8],
+            "graph_data": merged_graph,
         }
 
         semantic_cache.set(query, response)

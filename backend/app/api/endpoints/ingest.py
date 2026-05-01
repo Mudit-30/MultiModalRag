@@ -20,7 +20,7 @@ router = APIRouter()
 
 # File types treated as images / audio (not text-parsed)
 IMAGE_TYPES = {"image/jpeg", "image/png", "image/gif", "image/bmp", "image/webp", "image/tiff"}
-AUDIO_TYPES = {"audio/mpeg", "audio/wav", "audio/ogg", "audio/mp4", "audio/webm", "audio/x-wav"}
+AUDIO_TYPES = {"audio/mpeg", "audio/wav", "audio/ogg", "audio/mp4", "audio/webm", "audio/x-wav", "video/mp4", "video/webm", "video/x-matroska", "video/avi"}
 
 
 async def _store_graph_background(text: str, source_id: str):
@@ -41,7 +41,7 @@ async def _store_graph_background(text: str, source_id: str):
         logger.warning("Graph extraction skipped for %s: %s", source_id, e)
 
 
-@router.post("/")
+@router.post("")
 async def ingest_file(
     background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
@@ -164,3 +164,95 @@ async def ingest_file(
         "chunks":    total_vectors,
         "preview":   extracted_text[:400] + ("..." if len(extracted_text) > 400 else ""),
     }
+
+
+# ── URL scraping endpoint ──────────────────────────────────────────────────────
+
+from pydantic import BaseModel as _BaseModel
+
+class UrlIngestRequest(_BaseModel):
+    url: str
+
+
+@router.post("/url")
+async def ingest_url(request: UrlIngestRequest, background_tasks: BackgroundTasks):
+    """Scrape a URL and ingest its text content into the RAG pipeline."""
+    import httpx
+    from html.parser import HTMLParser
+
+    url = request.url.strip()
+    if not url.startswith(("http://", "https://")):
+        raise HTTPException(status_code=400, detail="Invalid URL. Must start with http:// or https://")
+
+    try:
+        async with httpx.AsyncClient(timeout=20, follow_redirects=True) as client:
+            resp = await client.get(url, headers={"User-Agent": "Mozilla/5.0"})
+        resp.raise_for_status()
+        html = resp.text
+    except Exception as e:
+        raise HTTPException(status_code=422, detail=f"Could not fetch URL: {e}")
+
+    # Simple HTML → plain text stripper
+    class _Stripper(HTMLParser):
+        def __init__(self):
+            super().__init__()
+            self.parts = []
+            self._skip = False
+        def handle_starttag(self, tag, attrs):
+            if tag in ("script", "style", "nav", "header", "footer"):
+                self._skip = True
+        def handle_endtag(self, tag):
+            if tag in ("script", "style", "nav", "header", "footer"):
+                self._skip = False
+        def handle_data(self, data):
+            if not self._skip:
+                stripped = data.strip()
+                if stripped:
+                    self.parts.append(stripped)
+
+    parser = _Stripper()
+    parser.feed(html)
+    extracted_text = "\n".join(parser.parts)
+
+    if len(extracted_text) < 50:
+        raise HTTPException(status_code=422, detail="Could not extract meaningful text from the URL.")
+
+    # Truncate to reasonable size (~50k chars)
+    extracted_text = extracted_text[:50_000]
+
+    source_id = str(uuid.uuid4())
+    hostname  = url.split("/")[2]
+
+    chunks    = text_processor.chunk_text(extracted_text)
+    embeddings = text_processor.encode_batch([c["text"] for c in chunks])
+    total_vectors = 0
+
+    for i, (chunk, emb) in enumerate(zip(chunks, embeddings)):
+        chunk_id = f"{source_id}_{i}"
+        qdrant_manager.upsert_vector(
+            chunk_id=chunk_id,
+            vector=emb,
+            payload={
+                "text":      chunk["text"],
+                "source_id": source_id,
+                "filename":  hostname,
+                "source":    url,
+                "page":      i,
+                "modality":  "text",
+            },
+        )
+        text_processor.add_to_bm25_corpus(chunk["text"])
+        total_vectors += 1
+
+    background_tasks.add_task(_store_graph_background, extracted_text[:8000], source_id)
+
+    logger.info("URL ingestion complete: url=%s, chunks=%d", url, total_vectors)
+    return {
+        "message":   "URL ingested successfully",
+        "source_id": source_id,
+        "filename":  hostname,
+        "url":       url,
+        "chunks":    total_vectors,
+        "preview":   extracted_text[:300] + "...",
+    }
+

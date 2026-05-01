@@ -36,9 +36,34 @@ export async function ingestFile(file, onProgress) {
       }
     }
     xhr.onerror = () => reject(new Error('Network error during upload'))
-    xhr.open('POST', `${API_URL}/ingest/`)
+    xhr.open('POST', `${API_URL}/ingest`)
     xhr.send(formData)
   })
+}
+
+// Upload multiple files sequentially
+export async function ingestDocuments(files) {
+  const results = []
+  for (const file of files) {
+    const result = await ingestFile(file)
+    results.push(result)
+  }
+  return results
+}
+
+// ── Scrape URL → ingest as RAG context ────────────────────────────────────────
+export async function scrapeUrl(url) {
+  const res = await fetch(`${API_URL}/ingest/url`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ url }),
+  })
+  if (!res.ok) {
+    let detail = res.statusText
+    try { const j = await res.json(); detail = j.detail || detail } catch (_) {}
+    throw new Error(detail)
+  }
+  return res.json()
 }
 
 // ── Health ─────────────────────────────────────────────────────────────────────

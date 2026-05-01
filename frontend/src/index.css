@@ -1,44 +1,82 @@
-/* Premium dark design system */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&family=Inter:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
 
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  
+  --color-glass-bg: rgba(17, 24, 39, 0.7);
+  --color-glass-border: rgba(255, 255, 255, 0.08);
+}
 
+/* ── Design Tokens ─────────────────────────────────────────────────── */
 :root {
-  --bg-base:    #020409;
-  --bg-surface: #0c1015;
-  --bg-elevated:#131921;
-  --bg-hover:   #1a2232;
-  --border:     #1e2d40;
-  --border-bright: #2a3f5a;
-  --indigo:     #6366f1;
-  --indigo-dim: #3730a3;
+  --bg-base:       #050810;
+  --bg-surface:    #0c111d;
+  --bg-elevated:   #131921;
+  --bg-hover:      #1a2232;
+  --border:        rgba(255,255,255,0.05);
+  --border-bright: rgba(255,255,255,0.12);
+
+  /* 4-colour system: dark, light, accent-1 (cyan), accent-2 (violet) */
+  --accent-1:  #22d3ee;  /* cyan  */
+  --accent-2:  #8b5cf6;  /* violet*/
+  --indigo:    #6366f1;
+  --indigo-dim:#3730a3;
   --indigo-glow:#818cf8;
-  --violet:     #8b5cf6;
-  --cyan:       #22d3ee;
-  --green:      #4ade80;
-  --amber:      #fbbf24;
-  --red:        #f87171;
-  --text-1:     #f1f5f9;
-  --text-2:     #94a3b8;
-  --text-3:     #475569;
-  --text-4:     #2d3f52;
+  --green:     #4ade80;
+  --amber:     #fbbf24;
+  --red:       #f87171;
+
+  /* Typography scale (base 18px → all in rem) */
+  --text-1: #f1f5f9;
+  --text-2: #94a3b8;
+  --text-3: #475569;
+  --text-4: #2d3f52;
+
+  /* Spacing system (multiples of 4) */
+  --sp-1: 0.25rem;
+  --sp-2: 0.5rem;
+  --sp-3: 0.75rem;
+  --sp-4: 1rem;
+  --sp-6: 1.5rem;
+  --sp-8: 2rem;
+  --sp-10: 2.5rem;
+}
+
+/* ── Base Reset & Scale ────────────────────────────────────────────── */
+html {
+  font-size: 17px;           /* 1rem = 17px — lifts everything uniformly */
 }
 
 html, body, #root {
   height: 100%;
-  background: var(--bg-base);
+  background-color: var(--bg-base);
   color: var(--text-1);
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.65;         /* inverse: bigger body → slightly looser */
 }
 
-/* Scrollbars */
-::-webkit-scrollbar { width: 4px; height: 4px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 99px; }
-::-webkit-scrollbar-thumb:hover { background: var(--indigo-dim); }
+/* Headings: tighter line-height for visual mass */
+h1 { font-size: 3.5rem;   line-height: 1.05; letter-spacing: -0.02em; }
+h2 { font-size: 2rem;     line-height: 1.15; letter-spacing: -0.01em; }
+h3 { font-size: 1.5rem;   line-height: 1.2;  }
+h4 { font-size: 1.15rem;  line-height: 1.3;  }
+h5, h6 { font-size: 1rem; line-height: 1.4;  }
 
-/* Utility animations */
+/* Paragraph text — left-aligned, legible */
+p  { max-width: 70ch; }
+
+/* ── Scrollbars ────────────────────────────────────────────────────── */
+::-webkit-scrollbar       { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: #334155; }
+
+/* ── Utility Animations ────────────────────────────────────────────── */
 @keyframes pulse-ring {
   0%   { transform: scale(1);   opacity: .6; }
   100% { transform: scale(1.7); opacity: 0;  }
@@ -48,7 +86,7 @@ html, body, #root {
   100% { background-position:  200% center; }
 }
 @keyframes fadeUp {
-  from { opacity: 0; transform: translateY(8px); }
+  from { opacity: 0; transform: translateY(10px); }
   to   { opacity: 1; transform: translateY(0);    }
 }
 @keyframes blink {
@@ -56,49 +94,136 @@ html, body, #root {
   50%       { opacity: 0; }
 }
 @keyframes spin { to { transform: rotate(360deg); } }
-
-.animate-fade-up  { animation: fadeUp .3s ease both; }
-.animate-spin     { animation: spin 1s linear infinite; }
-.animate-blink    { animation: blink 1s step-end infinite; }
-
-/* Glass card */
-.glass {
-  background: rgba(12,16,21,.85);
-  backdrop-filter: blur(12px);
-  border: 1px solid var(--border);
+@keyframes float {
+  0%, 100% { transform: translateY(0);   }
+  50%       { transform: translateY(-6px); }
 }
 
-/* Gradient text */
+.animate-fade-up  { animation: fadeUp .35s ease both; }
+.animate-spin     { animation: spin 1s linear infinite; }
+.animate-blink    { animation: blink 1s step-end infinite; }
+.animate-float    { animation: float 3s ease-in-out infinite; }
+
+/* ── Glass Card ────────────────────────────────────────────────────── */
+.glass {
+  background: var(--color-glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--color-glass-border);
+}
+
+.glass-panel {
+  background: rgba(12, 17, 29, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 1rem;
+}
+
+/* ── Gradient Text Utility ─────────────────────────────────────────── */
 .grad-text {
-  background: linear-gradient(135deg, var(--indigo-glow), var(--cyan));
+  background: linear-gradient(135deg, var(--accent-1), var(--indigo-glow));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
-/* Typing dots */
+/* ── Typing Dots ───────────────────────────────────────────────────── */
 .typing-dot {
   display: inline-block;
-  width: 6px; height: 6px;
+  width: 7px; height: 7px;
   border-radius: 50%;
-  background: var(--indigo-glow);
+  background: var(--accent-1);
   animation: blink .9s infinite;
 }
 .typing-dot:nth-child(2) { animation-delay: .2s; }
 .typing-dot:nth-child(3) { animation-delay: .4s; }
 
-/* Chip / badge */
+/* ── Chips / Badges ────────────────────────────────────────────────── */
 .chip {
   display: inline-flex; align-items: center; gap: 4px;
-  padding: 2px 8px;
-  font-size: 10px; font-weight: 600; letter-spacing: .04em;
+  padding: 3px 10px;
+  font-size: 0.65rem; font-weight: 600; letter-spacing: .05em;
   border-radius: 99px;
   border: 1px solid var(--border-bright);
   color: var(--text-2);
-  background: var(--bg-elevated);
+  background: rgba(255,255,255,0.03);
 }
 .chip.indigo { border-color: #3730a3; color: #a5b4fc; background: #1e1b4b66; }
 .chip.green  { border-color: #166534; color: #4ade80; background: #14532d44; }
 .chip.amber  { border-color: #78350f; color: #fbbf24; background: #451a0344; }
 .chip.red    { border-color: #7f1d1d; color: #f87171; background: #45101044; }
 .chip.cyan   { border-color: #164e63; color: #22d3ee; background: #083344aa; }
+
+/* ── Glows ─────────────────────────────────────────────────────────── */
+.glow-text {
+  text-shadow: 0 0 24px rgba(34, 211, 238, 0.5);
+}
+.glow-border {
+  box-shadow: 0 0 18px rgba(34, 211, 238, 0.18), inset 0 0 12px rgba(34, 211, 238, 0.06);
+}
+.shadow-elevation {
+  box-shadow:
+    0 4px 6px -1px rgba(0,0,0,0.4),
+    0 10px 15px -3px rgba(0,0,0,0.3),
+    0 20px 40px -12px rgba(0,0,0,0.5);
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #334155;
+}
+
+.glow-text {
+  text-shadow: 0 0 20px rgba(0, 229, 255, 0.4);
+}
+
+.glow-border {
+  box-shadow: 0 0 15px rgba(0, 229, 255, 0.15), inset 0 0 10px rgba(0, 229, 255, 0.05);
+}
+
+/* ── Rainbow Title ─────────────────────────────────────────────────── */
+.rainbow-text {
+  background: linear-gradient(90deg, #ff0055, #ffaa00, #00ffaa, #00aaff, #aa00ff, #ff0055);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: transparent;
+  animation: rainbow-shift 5s linear infinite;
+  background-size: 200% auto;
+}
+
+@keyframes rainbow-shift {
+  to { background-position: 200% center; }
+}
+
+/* ── Chat message prose ─────────────────────────────────────────────── */
+.chat-prose {
+  font-size: 1rem;
+  line-height: 1.75;
+  color: var(--text-1);
+}
+.chat-prose p + p { margin-top: 0.75rem; }
+
+/* ── Panel headers ──────────────────────────────────────────────────── */
+.panel-title {
+  font-size: 1.5rem;
+  font-weight: 300;
+  letter-spacing: -0.01em;
+  color: #f1f5f9;
+  line-height: 1.2;
+}
+.panel-subtitle {
+  font-size: 0.875rem;
+  color: var(--text-3);
+  margin-top: 0.25rem;
+}

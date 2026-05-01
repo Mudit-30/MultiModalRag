@@ -1,142 +1,141 @@
-import { BookOpen, FileText, Image, Music, File, Hash, ExternalLink } from 'lucide-react'
-import useStore from '../store/useStore'
+import React from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { FileText, Image, Mic, Hash, AlertCircle, Library } from 'lucide-react';
+import useStore from '../store/useStore';
 
-const MODALITY_ICON  = { text: FileText, image: Image, audio: Music }
-const MODALITY_COLOR = { text:'var(--violet)', image:'var(--amber)', audio:'var(--cyan)' }
-const MODALITY_CHIP  = { text:'indigo', image:'amber', audio:'cyan' }
+const displayFont = { fontFamily: '"Gravitas One", serif' };
 
-function ScoreBar({ score, label }) {
-  const pct = Math.min(100, Math.max(0, Math.round((score || 0) * 100)))
-  const color = pct > 75 ? '#4ade80' : pct > 50 ? '#fbbf24' : '#f87171'
+// Convert a raw chunk_id like "a2d19624_0" or filename into a readable label
+function readableSource(citation) {
+  // Prefer explicit filename / source fields the backend may provide
+  if (citation.filename) return citation.filename;
+  if (citation.source) return citation.source;
+  if (citation.doc_id) return citation.doc_id;
+
+  // Fallback: chunk_id is UUID_chunkIndex — strip the UUID part
+  const raw = citation.chunk_id || '';
+  const parts = raw.split('_');
+  // If last segment is a number it's the chunk index → show "…_chunk N"
+  const chunkIndex = parseInt(parts[parts.length - 1], 10);
+  if (!isNaN(chunkIndex)) {
+    return `Chunk ${chunkIndex + 1}`;
+  }
+  return raw.substring(0, 24) || 'Document';
+}
+
+function modalityIcon(modality) {
+  switch (modality) {
+    case 'image': return <Image size={13} className="text-amber-400" />;
+    case 'audio': return <Mic size={13} className="text-cyan-400" />;
+    default:      return <FileText size={13} className="text-violet-400" />;
+  }
+}
+
+function modalityTag(modality) {
+  const map = {
+    image: 'bg-amber-950/40 text-amber-400 border-amber-900/40',
+    audio: 'bg-cyan-950/40 text-cyan-400 border-cyan-900/40',
+    text:  'bg-violet-950/40 text-violet-400 border-violet-900/40',
+  };
+  return map[modality] || map.text;
+}
+
+function scoreBar(score) {
+  const pct = Math.min(100, Math.round((score || 0) * 100));
+  const color = pct > 70 ? 'bg-cyan-400' : pct > 40 ? 'bg-violet-400' : 'bg-slate-600';
   return (
-    <div style={{ display:'flex', alignItems:'center', gap:6 }}>
-      {label && <span style={{ fontSize:9, color:'var(--text-4)', minWidth:36 }}>{label}</span>}
-      <div style={{
-        flex:1, height:3, background:'var(--bg-base)',
-        borderRadius:99, overflow:'hidden',
-      }}>
-        <div style={{
-          height:'100%', width:`${pct}%`,
-          background: color, borderRadius:99,
-          transition:'width .6s ease',
-          boxShadow:`0 0 6px ${color}88`,
-        }} />
+    <div className="flex items-center gap-2 mt-3">
+      <div className="flex-1 h-1 bg-white/5 rounded-full overflow-hidden">
+        <motion.div
+          initial={{ width: 0 }}
+          animate={{ width: `${pct}%` }}
+          transition={{ duration: 0.6, ease: 'easeOut' }}
+          className={`h-full rounded-full ${color}`}
+        />
       </div>
-      <span style={{ fontSize:10, color, fontWeight:600, minWidth:28 }}>{pct}%</span>
+      <span className="text-[10px] font-mono text-slate-500">{pct}%</span>
     </div>
-  )
+  );
 }
 
 export default function CitationPanel() {
-  const { citations } = useStore()
+  const { citations } = useStore();
 
-  if (!citations?.length) {
-    return (
-      <div style={{
-        display:'flex', flexDirection:'column',
-        alignItems:'center', justifyContent:'center',
-        height:'100%', gap:10, color:'var(--text-4)',
-      }}>
-        <BookOpen size={36} opacity={.2} />
-        <p style={{ fontSize:12, textAlign:'center', lineHeight:1.7 }}>
-          Retrieved source chunks appear here<br />after a query
-        </p>
-      </div>
-    )
-  }
+  const hasCitations = citations && citations.length > 0;
 
   return (
-    <div style={{ height:'100%', display:'flex', flexDirection:'column' }}>
-      {/* Header */}
-      <div style={{
-        display:'flex', alignItems:'center', gap:8,
-        paddingBottom:10, marginBottom:10,
-        borderBottom:'1px solid var(--border)',
-      }}>
-        <BookOpen size={14} color="var(--indigo-glow)" />
-        <span style={{ fontSize:13, fontWeight:600, color:'var(--text-1)' }}>Retrieved Sources</span>
-        <span className="chip indigo" style={{ marginLeft:'auto' }}>{citations.length} chunks</span>
+    <div className="flex-1 flex flex-col h-full">
+      <div className="p-6 border-b border-white/5 shrink-0">
+        <h2 className="text-3xl text-white tracking-tight" style={displayFont}>Citations Database</h2>
+        <p className="text-slate-500 mt-1 text-sm">
+          {hasCitations
+            ? `${citations.length} verified segments extracted from your query context.`
+            : 'Source segments will appear here after your first query.'}
+        </p>
       </div>
 
-      {/* Cards */}
-      <div style={{ flex:1, overflowY:'auto', display:'flex', flexDirection:'column', gap:8 }}>
-        {citations.map((c, i) => {
-          const modality   = c.modality || 'text'
-          const Icon       = MODALITY_ICON[modality] || FileText
-          const color      = MODALITY_COLOR[modality] || 'var(--violet)'
-          const chipClass  = MODALITY_CHIP[modality] || 'indigo'
-          const rerankScore = c.rerank_score ?? c.score ?? 0
-          const text        = c.text || c.caption || c.transcript || '—'
-          const filename    = c.filename || ''
-          const page        = c.page || 1
+      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+        {!hasCitations && (
+          <div className="flex flex-col items-center justify-center h-full text-center py-20 gap-3">
+            <Library size={40} className="text-slate-700" />
+            <p className="text-slate-600 text-sm">Ask a question to retrieve citations</p>
+          </div>
+        )}
 
-          return (
-            <div key={i} className="animate-fade-up" style={{
-              background:'var(--bg-base)',
-              border:'1px solid var(--border)',
-              borderRadius:10, padding:'12px 14px',
-              animationDelay:`${i * 60}ms`,
-            }}>
-              {/* Top row — modality + source + score */}
-              <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:8 }}>
-                <div style={{
-                  width:26, height:26, borderRadius:7,
-                  background: color + '22', border:`1px solid ${color}44`,
-                  display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0,
-                }}>
-                  <Icon size={13} color={color} />
+        <AnimatePresence>
+          {hasCitations && citations.map((item, i) => {
+            const label = readableSource(item);
+            const score = item.rerank_score ?? item.score ?? 0;
+            const text  = item.text || item.content || '';
+            const modality = item.modality || 'text';
+            const type = modality.toUpperCase().slice(0, 4);
+
+            return (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ delay: i * 0.06 }}
+                className="bg-[#0c111d] border border-white/5 rounded-2xl p-5 hover:border-cyan-900/50 hover:bg-white/[0.02] transition-colors cursor-pointer group"
+              >
+                {/* Header */}
+                <div className="flex items-center gap-3 mb-3">
+                  <div className={`w-7 h-7 rounded-lg flex items-center justify-center border ${modalityTag(modality)}`}>
+                    {modalityIcon(modality)}
+                  </div>
+                  <span className="text-sm font-medium text-slate-200 truncate flex-1">{label}</span>
+                  <span className="text-[10px] font-mono text-slate-600 shrink-0">[{type}]</span>
                 </div>
 
-                <span className={`chip ${chipClass}`}>{modality}</span>
-
-                {/* Source: filename + page */}
-                {filename && (
-                  <div style={{
-                    display:'flex', alignItems:'center', gap:4,
-                    fontSize:10, color:'var(--cyan)',
-                    background:'#083344aa',
-                    border:'1px solid #164e63',
-                    borderRadius:99, padding:'2px 7px',
-                    maxWidth:160, overflow:'hidden',
-                  }}>
-                    <File size={9} />
-                    <span style={{ overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
-                      {filename}
-                    </span>
-                    <span style={{ color:'var(--text-3)', flexShrink:0 }}>p.{page}</span>
+                {/* Excerpt */}
+                {text && (
+                  <div className="pl-4 border-l-2 border-slate-800 group-hover:border-cyan-900/60 transition-colors">
+                    <p className="text-slate-400 text-sm italic leading-relaxed line-clamp-4">
+                      "{text.substring(0, 300)}{text.length > 300 ? '…' : ''}"
+                    </p>
                   </div>
                 )}
 
                 {/* Score bar */}
-                <div style={{ marginLeft:'auto', width:90 }}>
-                  <ScoreBar score={rerankScore > 1 ? rerankScore / 10 : rerankScore} />
+                {score > 0 && scoreBar(score)}
+
+                {/* Tags */}
+                <div className="mt-4 flex gap-2 flex-wrap">
+                  <span className={`px-2.5 py-1 rounded text-[10px] uppercase tracking-widest border ${modalityTag(modality)}`}>
+                    {modality}
+                  </span>
+                  {item.chunk_id && (
+                    <span className="px-2.5 py-1 rounded bg-[#050810] border border-white/5 text-[10px] text-slate-600 font-mono">
+                      #{item.chunk_id.slice(-6)}
+                    </span>
+                  )}
                 </div>
-              </div>
-
-              {/* Chunk ID */}
-              <div style={{
-                display:'flex', alignItems:'center', gap:4,
-                fontSize:9, color:'var(--text-4)', marginBottom:6,
-              }}>
-                <Hash size={8} />
-                {(c.chunk_id || `chunk_${i}`).substring(0, 16)}…
-              </div>
-
-              {/* Text */}
-              <p style={{
-                fontSize:12, lineHeight:1.75,
-                color:'var(--text-2)',
-                display:'-webkit-box',
-                WebkitLineClamp:5,
-                WebkitBoxOrient:'vertical',
-                overflow:'hidden',
-              }}>
-                {text}
-              </p>
-            </div>
-          )
-        })}
+              </motion.div>
+            );
+          })}
+        </AnimatePresence>
       </div>
     </div>
-  )
+  );
 }

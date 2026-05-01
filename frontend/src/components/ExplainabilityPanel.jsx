@@ -1,269 +1,156 @@
-import { Activity, CheckCircle2, XCircle, Layers, Search, ShieldCheck, ChevronDown, ChevronRight, Zap } from 'lucide-react'
-import { useState } from 'react'
-import useStore from '../store/useStore'
+import React from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Activity, Clock, CheckCircle2, Loader2, AlertTriangle, Terminal } from 'lucide-react';
+import useStore from '../store/useStore';
 
-const STEP_CONFIG = {
-  Decomposition: {
-    icon: Layers, color:'#818cf8', bg:'#1e1b4b44', border:'#3730a3',
-    label:'Query Decomposition',
-    desc:'Breaking complex query into parallel sub-queries',
-  },
-  Retrieval: {
-    icon: Search, color:'#a78bfa', bg:'#2e106555', border:'#6d28d9',
-    label:'Hybrid Retrieval',
-    desc:'Dense (BGE) + BM25 Sparse + RRF Fusion + Cross-Encoder Reranking',
-  },
-  Validation: {
-    icon: ShieldCheck, color:'#4ade80', bg:'#14532d44', border:'#166534',
-    label:'SRLM Self-Reward Validation',
-    desc:'Faithfulness + Relevance scoring — iterative self-improvement loop',
-  },
+const displayFont = { fontFamily: '"Gravitas One", serif' };
+
+const STEP_ICONS = {
+  complete: <CheckCircle2 size={14} className="text-green-400" />,
+  active:   <Loader2 size={14} className="text-cyan-400 animate-spin" />,
+  pending:  <Clock size={14} className="text-slate-600" />,
+  error:    <AlertTriangle size={14} className="text-red-400" />,
+};
+
+function stepStatus(step) {
+  if (step.error) return 'error';
+  if (step.status) return step.status;
+  if (step.duration_ms !== undefined || step.result) return 'complete';
+  return 'pending';
 }
 
-function ConfidenceRing({ score }) {
-  const pct  = Math.round((score || 0) * 100)
-  const color = pct >= 75 ? '#4ade80' : pct >= 50 ? '#fbbf24' : '#f87171'
-  return (
-    <div style={{
-      width:38, height:38, borderRadius:'50%',
-      background:`conic-gradient(${color} ${pct * 3.6}deg, #1e2d40 0deg)`,
-      display:'flex', alignItems:'center', justifyContent:'center',
-      flexShrink:0,
-    }}>
-      <div style={{
-        width:28, height:28, borderRadius:'50%',
-        background:'var(--bg-base)',
-        display:'flex', alignItems:'center', justifyContent:'center',
-        fontSize:9, fontWeight:700, color,
-      }}>
-        {pct}%
-      </div>
-    </div>
-  )
+function resultPreview(result) {
+  if (!result) return null;
+  if (Array.isArray(result)) {
+    if (result.length === 0) return null;
+    return result.slice(0, 3).map((r, i) => (
+      <span key={i} className="px-2 py-0.5 text-[10px] rounded bg-white/5 border border-white/5 text-slate-400 font-mono">
+        {typeof r === 'string' ? r.slice(0, 40) : JSON.stringify(r).slice(0, 40)}
+      </span>
+    ));
+  }
+  if (typeof result === 'string') {
+    return <span className="text-[11px] text-slate-400 font-mono">{result.slice(0, 80)}</span>;
+  }
+  return null;
 }
 
-function AttemptBadge({ attempt, isValid }) {
-  return (
-    <span style={{
-      fontSize:9, fontWeight:700, padding:'2px 6px',
-      borderRadius:99,
-      background: isValid ? '#14532d' : '#45101044',
-      color:       isValid ? '#4ade80' : '#f87171',
-      border:`1px solid ${isValid ? '#166534' : '#7f1d1d'}`,
-    }}>
-      Attempt {attempt}
-    </span>
-  )
-}
-
-function Step({ step, index }) {
-  const [open, setOpen] = useState(true)
-  const cfg  = STEP_CONFIG[step.step] || STEP_CONFIG.Retrieval
-  const Icon = cfg.icon
-
-  return (
-    <div className="animate-fade-up" style={{
-      borderRadius:10, border:`1px solid ${cfg.border}`,
-      background: cfg.bg, overflow:'hidden',
-      animationDelay:`${index * 80}ms`,
-    }}>
-      {/* Header */}
-      <button onClick={() => setOpen(o => !o)} style={{
-        width:'100%', display:'flex', alignItems:'center', gap:10,
-        padding:'10px 14px', background:'transparent',
-        border:'none', cursor:'pointer', textAlign:'left',
-      }}>
-        <div style={{
-          width:28, height:28, borderRadius:8,
-          background: cfg.color + '22',
-          display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0,
-        }}>
-          <Icon size={13} color={cfg.color} />
-        </div>
-        <div style={{ flex:1 }}>
-          <p style={{ fontSize:12, fontWeight:700, color: cfg.color }}>{cfg.label}</p>
-          <p style={{ fontSize:10, color:'var(--text-3)' }}>{cfg.desc}</p>
-        </div>
-        <span style={{
-          fontSize:10, fontWeight:700, padding:'2px 7px',
-          borderRadius:99, background: cfg.color + '22',
-          color: cfg.color, border:`1px solid ${cfg.color}44`,
-          flexShrink:0,
-        }}>Step {index + 1}</span>
-        {open ? <ChevronDown size={14} color="var(--text-3)" /> : <ChevronRight size={14} color="var(--text-3)" />}
-      </button>
-
-      {/* Body */}
-      {open && (
-        <div style={{ padding:'0 14px 12px', display:'flex', flexDirection:'column', gap:6 }}>
-
-          {/* Decomposition sub-queries */}
-          {step.result && Array.isArray(step.result) && (
-            <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
-              {step.result.map((sq, j) => (
-                <div key={j} style={{
-                  display:'flex', alignItems:'flex-start', gap:8,
-                  padding:'7px 10px',
-                  background:'var(--bg-base)', borderRadius:7, border:'1px solid var(--border)',
-                }}>
-                  <span style={{
-                    fontSize:9, fontWeight:700, padding:'2px 6px',
-                    borderRadius:99, background:'#3730a3', color:'#a5b4fc', flexShrink:0, marginTop:1,
-                  }}>Q{j + 1}</span>
-                  <p style={{ fontSize:11, color:'var(--text-2)', lineHeight:1.6 }}>{sq}</p>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Retrieval stats */}
-          {step.context_size !== undefined && (
-            <div style={{
-              display:'flex', flexWrap:'wrap', gap:8,
-              padding:'8px 10px',
-              background:'var(--bg-base)', borderRadius:7, border:'1px solid var(--border)',
-            }}>
-              <div style={{ display:'flex', alignItems:'center', gap:6, fontSize:11, color:'var(--text-2)' }}>
-                <div style={{
-                  width:8, height:8, borderRadius:9999,
-                  background: step.context_size > 0 ? '#4ade80' : '#f87171',
-                  boxShadow:`0 0 6px ${step.context_size > 0 ? '#4ade80' : '#f87171'}88`,
-                }} />
-                {step.context_size > 0
-                  ? `${step.context_size.toLocaleString()} chars retrieved`
-                  : 'No context found — ingest documents first'}
-              </div>
-              {step.chunks_found > 0 && (
-                <span style={{ fontSize:11, color:'var(--text-3)' }}>
-                  {step.chunks_found} unique chunks
-                </span>
-              )}
-              {step.strategies && (
-                <span style={{ fontSize:11, color:'var(--indigo-glow)' }}>
-                  {step.strategies.join(' + ')}
-                </span>
-              )}
-            </div>
-          )}
-
-          {/* Validation attempt result */}
-          {step.is_valid !== undefined && (
-            <div style={{
-              display:'flex', alignItems:'flex-start', gap:10,
-              padding:'10px 12px',
-              background: step.is_valid ? '#14532d33' : '#45101033',
-              borderRadius:7,
-              border:`1px solid ${step.is_valid ? '#166534' : '#7f1d1d'}`,
-            }}>
-              {/* Confidence ring */}
-              {step.confidence !== undefined && (
-                <ConfidenceRing score={step.confidence} />
-              )}
-
-              <div style={{ flex:1 }}>
-                <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:5 }}>
-                  {step.is_valid
-                    ? <CheckCircle2 size={13} color="#4ade80" />
-                    : <XCircle size={13} color="#f87171" />
-                  }
-                  <span style={{
-                    fontSize:11, fontWeight:600,
-                    color: step.is_valid ? '#4ade80' : '#f87171',
-                  }}>
-                    {step.is_valid ? 'Validated — faithful to context' : 'Rejected — regenerating'}
-                  </span>
-                  {step.attempt && <AttemptBadge attempt={step.attempt} isValid={step.is_valid} />}
-                </div>
-                {step.feedback && !step.is_valid && (
-                  <p style={{ fontSize:10, color:'var(--text-3)', lineHeight:1.6 }}>
-                    {step.feedback}
-                  </p>
-                )}
-              </div>
-            </div>
-          )}
-
-          {step.error && (
-            <p style={{ fontSize:11, color:'var(--red)', padding:'6px 10px' }}>
-              Error: {step.error}
-            </p>
-          )}
-        </div>
-      )}
-    </div>
-  )
-}
+// Fallback demo steps shown when no trace exists yet
+const DEMO_STEPS = [
+  { step: 'Awaiting Query', description: 'Ask a question to start the agent pipeline.', status: 'pending' },
+  { step: 'Query Analysis', description: 'Decompose multi-part questions into sub-queries.', status: 'pending' },
+  { step: 'Vector Retrieval', description: 'Scan vector store with top_k ranked results.', status: 'pending' },
+  { step: 'Re-ranking', description: 'Apply cross-encoder to filter irrelevant chunks.', status: 'pending' },
+  { step: 'Synthesis', description: 'Generate final response via LLM.', status: 'pending' },
+];
 
 export default function ExplainabilityPanel() {
-  const { trace } = useStore()
+  const { trace } = useStore();
 
-  if (!trace) {
-    return (
-      <div style={{
-        display:'flex', flexDirection:'column',
-        alignItems:'center', justifyContent:'center',
-        height:'100%', gap:10, color:'var(--text-4)',
-      }}>
-        <Activity size={36} opacity={.2} />
-        <p style={{ fontSize:12, textAlign:'center', lineHeight:1.7 }}>
-          Agent trace appears here after a query.<br />
-          Shows Decomposition → Retrieval → SRLM Validation.
-        </p>
-      </div>
-    )
-  }
+  const hasTrace = trace && trace.timeline && trace.timeline.length > 0;
+  const steps = hasTrace ? trace.timeline : DEMO_STEPS;
 
-  const timeline  = trace.timeline || []
-  const validated = timeline.filter(s => s.step === 'Validation')
-  const lastVal   = validated[validated.length - 1]
-  const finalConf = lastVal?.confidence ?? 0
+  // Build terminal log from trace
+  const terminalLines = hasTrace
+    ? [
+        `> query: "${trace.query || '(see above)'}"`,
+        `> pipeline: ${trace.pipeline || 'hybrid_rag'}`,
+        ...steps.map(s => `> [${(s.duration_ms || '—') + 'ms'}] ${s.step} — ${stepStatus(s)}`),
+        trace.total_time_ms ? `> total: ${trace.total_time_ms}ms` : null,
+        `> status: ok`,
+      ].filter(Boolean)
+    : [
+        '> waiting for first query...',
+        '> agent trace will appear here',
+        '> in real-time as each step completes',
+      ];
 
   return (
-    <div style={{ height:'100%', display:'flex', flexDirection:'column' }}>
+    <div className="flex-1 flex flex-col h-full">
       {/* Header */}
-      <div style={{
-        display:'flex', alignItems:'center', gap:8,
-        paddingBottom:10, marginBottom:12,
-        borderBottom:'1px solid var(--border)',
-      }}>
-        <Activity size={14} color="var(--indigo-glow)" />
-        <span style={{ fontSize:13, fontWeight:600, color:'var(--text-1)' }}>Agent Trace</span>
-
-        {/* Final confidence */}
-        {finalConf > 0 && (
-          <div style={{
-            display:'flex', alignItems:'center', gap:5,
-            marginLeft:'auto',
-            fontSize:11, fontWeight:700,
-            color: finalConf >= 0.75 ? '#4ade80' : '#fbbf24',
-            background: finalConf >= 0.75 ? '#14532d33' : '#78350f33',
-            border:`1px solid ${finalConf >= 0.75 ? '#166534' : '#92400e'}`,
-            borderRadius:99, padding:'3px 10px',
-          }}>
-            <Zap size={10} />
-            {Math.round(finalConf * 100)}% confidence
-          </div>
-        )}
-        <span className="chip indigo">{timeline.length} steps</span>
+      <div className="p-6 border-b border-white/5 shrink-0">
+        <h2 className="text-3xl text-white tracking-tight" style={displayFont}>Execution Trace</h2>
+        <p className="text-slate-500 mt-1 text-sm">
+          {hasTrace
+            ? `${steps.length} pipeline steps · ${trace.total_time_ms ? trace.total_time_ms + 'ms total' : 'completed'}`
+            : 'Real-time telemetry of the intelligence engine.'}
+        </p>
       </div>
 
-      {/* SRLM retry indicator */}
-      {validated.length > 1 && (
-        <div style={{
-          display:'flex', alignItems:'center', gap:6,
-          padding:'7px 10px', marginBottom:8,
-          background:'#451a0333', border:'1px solid #78350f',
-          borderRadius:7, fontSize:11, color:'#fbbf24',
-        }}>
-          <Zap size={12} />
-          SRLM self-improvement triggered — {validated.length} generation attempts
-        </div>
-      )}
+      {/* Timeline */}
+      <div className="flex-1 overflow-y-auto p-6">
+        <div className="relative border-l border-white/10 ml-3 space-y-8 pb-8">
+          <AnimatePresence>
+            {steps.map((step, i) => {
+              const status = stepStatus(step);
+              const isActive = status === 'active';
+              const isComplete = status === 'complete';
 
-      {/* Steps */}
-      <div style={{ flex:1, overflowY:'auto', display:'flex', flexDirection:'column', gap:8 }}>
-        {timeline.map((step, i) => <Step key={i} step={step} index={i} />)}
+              return (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, x: -12 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.1 }}
+                  className="relative pl-7"
+                >
+                  {/* Timeline dot */}
+                  <div className={`absolute -left-[7px] top-1 w-3.5 h-3.5 rounded-full flex items-center justify-center
+                    ${isActive   ? 'bg-cyan-400 shadow-[0_0_14px_rgba(6,182,212,0.9)] animate-pulse' :
+                      isComplete ? 'bg-green-900 border border-green-500' :
+                                   'bg-slate-800 border border-slate-600'}`}
+                  >
+                    {isComplete && <CheckCircle2 size={9} className="text-green-400" />}
+                  </div>
+
+                  {/* Step header */}
+                  <div className="flex items-center justify-between mb-1.5">
+                    <h4 className={`font-medium tracking-tight text-base
+                      ${isActive ? 'text-cyan-400' : isComplete ? 'text-slate-200' : 'text-slate-500'}`}>
+                      {step.step}
+                    </h4>
+                    {step.duration_ms !== undefined && (
+                      <span className="text-[10px] font-mono text-slate-500 bg-white/5 px-2 py-0.5 rounded">
+                        {step.duration_ms}ms
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Description */}
+                  <p className="text-sm text-slate-500 leading-relaxed mb-2">
+                    {step.description || step.desc || ''}
+                  </p>
+
+                  {/* Result preview */}
+                  {isComplete && step.result && (
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {resultPreview(step.result)}
+                    </div>
+                  )}
+                </motion.div>
+              );
+            })}
+          </AnimatePresence>
+        </div>
+
+        {/* Terminal log */}
+        <div className="bg-[#080e1c] rounded-xl border border-white/5 p-4 font-mono text-[11px] text-cyan-700 overflow-hidden shadow-xl mt-2">
+          <div className="flex items-center gap-2 mb-3 pb-2 border-b border-white/5">
+            <div className="w-2.5 h-2.5 rounded-full bg-red-500/80" />
+            <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/80" />
+            <div className="w-2.5 h-2.5 rounded-full bg-green-500/80" />
+            <span className="ml-2 text-slate-600 flex items-center gap-1">
+              <Terminal size={10} /> agent-terminal
+            </span>
+            {hasTrace && trace.total_time_ms && (
+              <span className="ml-auto text-slate-600">{trace.total_time_ms}ms</span>
+            )}
+          </div>
+          <pre className="whitespace-pre-wrap leading-loose text-[11px]">
+            {terminalLines.join('\n')}
+          </pre>
+        </div>
       </div>
     </div>
-  )
+  );
 }

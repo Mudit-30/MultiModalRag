@@ -103,6 +103,7 @@ async def execute_hybrid_search(query: str, strategy: str = "HYBRID") -> Dict[st
 
     # ── 4. Graph traversal (HYBRID / GRAPH_ONLY) ──────────────────────────────
     graph_context = ""
+    frontend_graph_data = {"nodes": [], "links": []}
     if strategy in ("HYBRID", "GRAPH_ONLY") and neo4j_manager.driver:
         try:
             from langchain_groq import ChatGroq
@@ -119,6 +120,29 @@ async def execute_hybrid_search(query: str, strategy: str = "HYBRID") -> Dict[st
                 subgraph = neo4j_manager.extract_subgraph(entities)
                 graph_context = graph_reasoner.reason(subgraph)
                 logger.info("[Search] Graph context: %d chars for entities: %s", len(graph_context), entities)
+                
+                # Parse Neo4j subgraph for frontend D3 visualization
+                seen_nodes = set()
+                seen_links = set()
+                for path in subgraph.get("paths", []):
+                    nodes_list = path.get("nodes", [])
+                    rels_list = path.get("rels", [])
+                    
+                    for node in nodes_list:
+                        nid = node.get("id")
+                        if nid and nid not in seen_nodes:
+                            seen_nodes.add(nid)
+                            frontend_graph_data["nodes"].append({"id": nid, "name": nid, "label": node.get("type", "Entity")})
+                            
+                    for i, rel in enumerate(rels_list):
+                        if i + 1 < len(nodes_list):
+                            src = nodes_list[i].get("id")
+                            tgt = nodes_list[i+1].get("id")
+                            if src and tgt:
+                                l_key = f"{src}->{tgt}"
+                                if l_key not in seen_links:
+                                    seen_links.add(l_key)
+                                    frontend_graph_data["links"].append({"source": src, "target": tgt, "label": rel[1] if isinstance(rel, tuple) else rel.get("type", "RELATED")})
         except Exception as e:
             logger.warning("[Search] Graph search skipped: %s", e)
 
@@ -170,4 +194,5 @@ async def execute_hybrid_search(query: str, strategy: str = "HYBRID") -> Dict[st
         "context":         final_context,
         "source_ids":      list({c.get("source_id", "") for c in reranked}),
         "retrieved_chunks": reranked,
+        "graph_data":      frontend_graph_data if 'frontend_graph_data' in locals() else None,
     }
