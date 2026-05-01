@@ -1,64 +1,117 @@
-import { BookOpen, FileText, Image, Music } from 'lucide-react'
+import { BookOpen, FileText, Image, Music, ChevronRight, Hash } from 'lucide-react'
 import useStore from '../store/useStore'
 
-const MODALITY_ICONS = { text: FileText, image: Image, audio: Music }
-const MODALITY_COLORS = { text: 'text-blue-400 bg-blue-950', image: 'text-purple-400 bg-purple-950', audio: 'text-green-400 bg-green-950' }
+const MODALITY_ICON  = { text: FileText, image: Image, audio: Music }
+const MODALITY_COLOR = { text:'var(--violet)', image:'var(--amber)', audio:'var(--cyan)' }
+const MODALITY_CHIP  = { text:'indigo', image:'amber', audio:'cyan' }
+
+function ScoreBar({ score }) {
+  const pct = Math.min(100, Math.max(0, Math.round((score || 0) * 100)))
+  const color = pct > 75 ? '#4ade80' : pct > 50 ? '#fbbf24' : '#f87171'
+  return (
+    <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+      <div style={{
+        flex:1, height:3, background:'var(--bg-base)',
+        borderRadius:99, overflow:'hidden',
+      }}>
+        <div style={{
+          height:'100%', width:`${pct}%`,
+          background: color,
+          borderRadius:99, transition:'width .5s ease',
+          boxShadow:`0 0 6px ${color}88`,
+        }} />
+      </div>
+      <span style={{ fontSize:10, color, fontWeight:600, minWidth:28 }}>{pct}%</span>
+    </div>
+  )
+}
 
 export default function CitationPanel() {
   const { citations } = useStore()
 
-  if (citations.length === 0) {
+  if (!citations?.length) {
     return (
-      <div className="flex flex-col items-center justify-center h-full text-gray-700 gap-2">
-        <BookOpen className="w-10 h-10 opacity-20" />
-        <p className="text-sm">Citations will appear here after a query</p>
+      <div style={{
+        display:'flex', flexDirection:'column',
+        alignItems:'center', justifyContent:'center',
+        height:'100%', gap:10, color:'var(--text-4)',
+      }}>
+        <BookOpen size={36} opacity={.2} />
+        <p style={{ fontSize:12, textAlign:'center', lineHeight:1.7 }}>
+          Retrieved source chunks appear here<br />after a query
+        </p>
       </div>
     )
   }
 
   return (
-    <div className="h-full overflow-y-auto space-y-3 pr-1">
-      {citations.map((cite, i) => {
-        const modality = cite.modality || 'text'
-        const Icon = MODALITY_ICONS[modality] || FileText
-        const colorClass = MODALITY_COLORS[modality] || MODALITY_COLORS.text
+    <div style={{ height:'100%', display:'flex', flexDirection:'column', gap:0 }}>
+      {/* Header */}
+      <div style={{
+        display:'flex', alignItems:'center', gap:8,
+        paddingBottom:10, marginBottom:10,
+        borderBottom:'1px solid var(--border)',
+      }}>
+        <BookOpen size={14} color="var(--indigo-glow)" />
+        <span style={{ fontSize:13, fontWeight:600, color:'var(--text-1)' }}>Retrieved Sources</span>
+        <span className="chip indigo" style={{ marginLeft:'auto' }}>{citations.length} chunks</span>
+      </div>
 
-        return (
-          <div key={i} className="bg-gray-900 border border-gray-800 rounded-xl p-3 space-y-2">
-            <div className="flex items-center gap-2">
-              <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${colorClass}`}>
-                <Icon className="w-3.5 h-3.5" />
+      {/* Cards */}
+      <div style={{ flex:1, overflowY:'auto', display:'flex', flexDirection:'column', gap:8 }}>
+        {citations.map((c, i) => {
+          const modality = c.modality || 'text'
+          const Icon = MODALITY_ICON[modality] || FileText
+          const color = MODALITY_COLOR[modality] || 'var(--violet)'
+          const chipClass = MODALITY_CHIP[modality] || 'indigo'
+          const score = c.rerank_score ?? c.score ?? 0
+          const text = c.text || c.caption || c.transcript || '—'
+
+          return (
+            <div key={i} className="animate-fade-up" style={{
+              background:'var(--bg-base)',
+              border:'1px solid var(--border)',
+              borderRadius:10, padding:'12px 14px',
+              animationDelay:`${i * 60}ms`,
+            }}>
+              {/* Top row */}
+              <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:8 }}>
+                <div style={{
+                  width:26, height:26, borderRadius:7,
+                  background: color + '22', border:`1px solid ${color}44`,
+                  display:'flex', alignItems:'center', justifyContent:'center',
+                  flexShrink:0,
+                }}>
+                  <Icon size={13} color={color} />
+                </div>
+                <span className={`chip ${chipClass}`}>{modality}</span>
+                <div style={{
+                  display:'flex', alignItems:'center', gap:4,
+                  fontSize:10, color:'var(--text-4)',
+                }}>
+                  <Hash size={9} />
+                  {(c.chunk_id || c.source_id || `chunk_${i}`).substring(0, 12)}…
+                </div>
+                <div style={{ marginLeft:'auto', width:80 }}>
+                  <ScoreBar score={score} />
+                </div>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold text-gray-300 truncate">{cite.source_id}</p>
-                <p className="text-xs text-gray-600 capitalize">{modality} · chunk {cite.chunk_id?.split('_').pop()}</p>
-              </div>
-              {cite.rerank_score && (
-                <span className="text-xs px-2 py-0.5 bg-indigo-950 text-indigo-400 rounded-full font-mono">
-                  {(cite.rerank_score * 100).toFixed(0)}%
-                </span>
-              )}
+
+              {/* Text */}
+              <p style={{
+                fontSize:12, lineHeight:1.7,
+                color:'var(--text-2)',
+                display:'-webkit-box',
+                WebkitLineClamp:4,
+                WebkitBoxOrient:'vertical',
+                overflow:'hidden',
+              }}>
+                {text}
+              </p>
             </div>
-
-            {/* Content preview */}
-            <p className="text-xs text-gray-500 leading-relaxed line-clamp-3">
-              {cite.text || cite.caption || cite.transcript}
-            </p>
-
-            {/* Audio player for audio modality */}
-            {modality === 'audio' && cite.audio_url && (
-              <audio controls className="w-full h-8 mt-1" src={cite.audio_url}>
-                Your browser does not support the audio element.
-              </audio>
-            )}
-
-            {/* Image thumbnail for image modality */}
-            {modality === 'image' && cite.image_url && (
-              <img src={cite.image_url} alt={cite.caption} className="w-full h-28 object-cover rounded-lg mt-1" />
-            )}
-          </div>
-        )
-      })}
+          )
+        })}
+      </div>
     </div>
   )
 }

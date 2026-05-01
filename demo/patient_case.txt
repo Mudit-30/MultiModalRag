@@ -1,26 +1,101 @@
-Patient Name: John Doe
-Age: 52
-Chief Complaint: Persistent chest pain for 3 days, radiating to left arm. Mild shortness of breath.
+PATIENT CASE REPORT
+===================
+Patient:    John Doe
+DOB:        March 14, 1972  (Age: 52)
+MRN:        JD-2024-00412
+Admitted:   April 10, 2024 — 02:47 AM (Emergency)
+Ward:       Cardiac Care Unit (CCU), Bed 7
+Attending:  Dr. Aisha Mehta, MD, DM Cardiology
 
-History of Present Illness:
-Patient John Doe presented on April 10, 2024, with a 3-day history of chest pain described as pressure-like, rated 7/10. 
-Pain radiates to the left arm and jaw. Associated with mild dyspnea on exertion. No fever or cough.
-Patient has a history of Type 2 Diabetes diagnosed in 2018 and Hypertension since 2015.
-Current medications: Metformin 500mg twice daily, Amlodipine 5mg once daily.
+─────────────────────────────────────────────────────────────────────────────
+CHIEF COMPLAINT
+─────────────────────────────────────────────────────────────────────────────
+Severe chest pain radiating to the left arm and jaw, onset 3 days ago,
+progressively worsening. Associated breathlessness and sweating.
 
-Physical Examination:
-- BP: 158/95 mmHg
-- HR: 88 bpm
-- SpO2: 97% on room air
-- Mild diaphoresis observed
+─────────────────────────────────────────────────────────────────────────────
+HISTORY OF PRESENT ILLNESS
+─────────────────────────────────────────────────────────────────────────────
+Mr. Doe presented via ambulance at 02:47 AM with a 3-day history of
+pressure-like chest pain, rated 7–8/10 on the NRS pain scale. The pain
+is substernal, radiates to the left arm, left shoulder, and jaw. He reports
+mild dyspnea on exertion (NYHA Class II), diaphoresis (cold sweating), and
+two episodes of near-syncope in the last 24 hours. He denied fever, cough,
+hemoptysis, or leg swelling.
 
-Assessment:
-Suspected Acute Coronary Syndrome (ACS). Referred for ECG and troponin levels.
-ECG shows ST depression in leads V4-V6 consistent with NSTEMI.
+Symptoms began gradually while climbing stairs and have not resolved with rest.
+He took Aspirin 325mg at home prior to arrival (self-administered).
 
-Plan:
-1. Admit to cardiac care unit.
-2. Administer Aspirin 325mg loading dose.
-3. Start Heparin infusion per protocol.
-4. Cardiology consult requested.
-5. Schedule echocardiogram within 24 hours.
+─────────────────────────────────────────────────────────────────────────────
+PAST MEDICAL HISTORY
+─────────────────────────────────────────────────────────────────────────────
+1. Type 2 Diabetes Mellitus — diagnosed 2018, currently on Metformin 500mg BD
+2. Hypertension (HTN) — since 2015, on Amlodipine 5mg OD
+3. Dyslipidemia — known, diet-controlled
+4. Appendectomy — 2003, uneventful
+
+─────────────────────────────────────────────────────────────────────────────
+FAMILY HISTORY
+─────────────────────────────────────────────────────────────────────────────
+Father: Myocardial Infarction at age 58 (deceased)
+Mother: Hypertension, alive, age 78
+
+─────────────────────────────────────────────────────────────────────────────
+SOCIAL HISTORY
+─────────────────────────────────────────────────────────────────────────────
+Smoker: 20 pack-years (quit 2020)
+Alcohol: Social (<5 units/week)
+Occupation: Software Engineer (sedentary work)
+
+─────────────────────────────────────────────────────────────────────────────
+VITALS ON PRESENTATION
+─────────────────────────────────────────────────────────────────────────────
+BP:         158/96 mmHg (elevated — hypertensive)
+HR:         104 bpm (tachycardic)
+RR:         20 /min
+SpO2:       94% on room air
+Temperature:37.1°C (afebrile)
+GCS:        15/15 (alert and oriented)
+
+─────────────────────────────────────────────────────────────────────────────
+EXAMINATION FINDINGS
+─────────────────────────────────────────────────────────────────────────────
+General:    Anxious, diaphoretic male, in mild respiratory distress
+Cardiovascular: S1 S2 heard, no murmurs; mild JVD at 45°
+Respiratory:    Bibasal crackles (suggesting early pulmonary oedema)
+Abdomen:    Soft, non-tender
+Extremities:    No pedal oedema; peripheral pulses adequate bilaterally
+
+─────────────────────────────────────────────────────────────────────────────
+ECG FINDINGS
+─────────────────────────────────────────────────────────────────────────────
+- ST-segment depression in leads V4–V6 (posterior ischaemia pattern)
+- T-wave inversion in I, aVL (lateral wall involvement)
+- No Q waves
+- Heart Rate: 104 bpm, sinus rhythm
+- Impression: NON-ST Elevation Myocardial Infarction (NSTEMI) pattern
+
+─────────────────────────────────────────────────────────────────────────────
+LABORATORY INVESTIGATIONS
+─────────────────────────────────────────────────────────────────────────────
+Troponin I (High-Sensitivity):  3.84 ng/mL  [Normal: <0.04] — MARKEDLY ELEVATED
+Troponin I (repeat at 3h):      6.12 ng/mL  — Rising, consistent with acute MI
+CK-MB:                          78 U/L      [Normal: <25]  — Elevated
+BNP:                            412 pg/mL   [Normal: <100] — Elevated (myocardial stress)
+HbA1c:                          8.2%        — Poorly controlled diabetes
+Random Blood Glucose:           234 mg/dL   — Hyperglycaemic
+Creatinine:                     1.1 mg/dL   — Normal renal function
+eGFR:                           74 mL/min   — CKD Stage 2 (mild)
+LDL Cholesterol:                142 mg/dL   — Elevated
+HDL:                            38 mg/dL    — Low
+Triglycerides:                  198 mg/dL   — Borderline high
+INR:                            1.1         — Normal
+CBC:                            WBC 9.2, Hb 13.4, Plt 220 — Normal
+
+─────────────────────────────────────────────────────────────────────────────
+CLINICAL IMPRESSION
+─────────────────────────────────────────────────────────────────────────────
+NSTEMI (Non-ST Elevation Myocardial Infarction) — High-Risk Category
+Risk stratification: TIMI Score 5/7 (High Risk), GRACE Score 148 (High Risk)
+Precipitating factors: Poorly controlled T2DM, chronic hypertension, dyslipidemia,
+prior smoking history, and strong positive family history.

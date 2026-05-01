@@ -1,22 +1,145 @@
-Cardiology Consultation Note
-Patient: John Doe | Date: 2024-04-10 | Consultant: Dr. Arjun Mehta, Cardiologist
+PHYSICIAN CLINICAL NOTES — CCU ADMISSION
+=========================================
+Patient:    John Doe  |  MRN: JD-2024-00412
+Date:       April 10, 2024
+Attending:  Dr. Aisha Mehta, MD, DM Cardiology
+Ward:       Cardiac Care Unit (CCU) — Bed 7
 
-Reason for Consult:
-Chest pain with ECG changes consistent with NSTEMI, referred by Emergency Medicine.
+─────────────────────────────────────────────────────────────────────────────
+CLINICAL SUMMARY & PROVISIONAL DIAGNOSIS
+─────────────────────────────────────────────────────────────────────────────
+52-year-old male, known T2DM and hypertensive, presenting with NSTEMI.
+Troponin significantly elevated and rising (3.84 → 6.12 ng/mL).
+ECG shows lateral and posterior ischaemia. CXR confirms mild cardiomegaly
+with early pulmonary oedema. GRACE Score: 148 (High Risk for in-hospital
+mortality). Patient is haemodynamically compromised — CCU admission warranted.
 
-History & Assessment:
-Mr. Doe is a 52-year-old male with Type 2 Diabetes and Hypertension presenting with NSTEMI.
-ECG shows ST depression in V4-V6. Troponin I elevated at 0.8 ng/mL (normal < 0.04).
-Chest X-ray shows mild cardiomegaly and pulmonary venous hypertension.
+FINAL DIAGNOSIS: NSTEMI — High Risk (GRACE ≥140)
 
-Treatment Plan:
-1. Dual antiplatelet therapy: Aspirin 325mg (loading) + Clopidogrel 600mg (loading), followed by maintenance doses.
-2. Heparin infusion: Unfractionated heparin per weight-based protocol.
-3. Beta-blocker: Metoprolol 25mg twice daily to reduce myocardial oxygen demand.
-4. High-intensity statin: Atorvastatin 80mg once at night to stabilize plaque.
-5. Strict blood glucose monitoring given Diabetes Mellitus history — target glucose 140-180 mg/dL during admission.
-6. Urgent echocardiogram scheduled for LVEF assessment.
-7. Coronary angiography planned within 24 hours to evaluate coronary artery disease severity.
+─────────────────────────────────────────────────────────────────────────────
+TREATMENT PLAN — EVIDENCE-BASED (ACC/AHA NSTEMI GUIDELINES)
+─────────────────────────────────────────────────────────────────────────────
 
-Prognosis:
-Guarded. Risk stratification using GRACE score: High risk. Revascularization likely needed.
+1. ANTIPLATELET THERAPY — DUAL (DAPT):
+   - Aspirin 325mg STAT (loading dose, patient already self-administered — confirmed)
+   - Aspirin 75mg OD (maintenance — continue for life)
+   - Clopidogrel 600mg STAT (loading dose — P2Y12 inhibitor)
+   - Clopidogrel 75mg OD (maintenance — 12 months minimum)
+   Rationale: DAPT reduces platelet aggregation and prevents further coronary
+   thrombus propagation in NSTEMI. Clopidogrel preferred over Ticagrelor given
+   elevated bleeding risk (CKD Stage 2, age >50).
+
+2. ANTICOAGULATION:
+   - Unfractionated Heparin (UFH) infusion — weight-based protocol (60 U/kg bolus,
+     then 12 U/kg/hr; max bolus 4000 U, max infusion 1000 U/hr)
+   - Monitor aPTT every 6 hours — target 60–80 seconds
+   - Continue until coronary angiography or 48 hours
+   Rationale: UFH prevents further thrombus formation and maintains coronary patency
+   while the patient is prepared for invasive strategy.
+
+3. BETA-BLOCKER THERAPY:
+   - Metoprolol Succinate 25mg BD (oral)
+   - Titrate to HR 55–65 bpm and BP control
+   - Hold if HR <50, SBP <90, or evidence of acute decompensation
+   Rationale: Beta-blockade reduces myocardial oxygen demand, limits infarct size,
+   and reduces risk of malignant arrhythmias in the acute MI setting.
+
+4. HIGH-INTENSITY STATIN THERAPY:
+   - Atorvastatin 80mg OD (at bedtime)
+   - Target LDL <70 mg/dL (high-risk ACS target per ACC/AHA)
+   Rationale: High-intensity statins stabilize atherosclerotic plaques, reduce
+   inflammation (CRP), and have pleiotropic cardioprotective effects.
+
+5. GLYCAEMIC CONTROL:
+   - Hold Metformin (risk of contrast-induced nephropathy pre-angiography)
+   - Sliding scale insulin — Regular Insulin per blood glucose (BG) protocol
+   - BG Target: 140–180 mg/dL during acute admission (avoid tight control)
+   - Continuous glucose monitoring (CGM) in CCU
+   Rationale: Hyperglycaemia worsens ischaemic outcomes. However, hypoglycaemia
+   is equally harmful in acute MI — moderate target range is evidence-based.
+
+6. OXYGEN THERAPY:
+   - SpO2 currently 94% on room air — supplement with O2 via nasal cannula 2L/min
+   - Target SpO2 ≥95% — titrate and discontinue when stable
+   Note: Avoid hyperoxia (SpO2 >99%) — may worsen coronary vasoconstriction.
+
+7. ACE INHIBITOR (INITIATE AFTER STABILISATION):
+   - Ramipril 2.5mg OD — start once BP stable and creatinine checked post-procedure
+   - Titrate to 10mg OD for cardioprotective effect
+   Rationale: ACE inhibitors prevent LV remodelling post-MI, reduce afterload,
+   and are indicated in patients with HTN, DM, and reduced LVEF.
+
+8. LOOP DIURETIC:
+   - IV Furosemide 40mg STAT — for pulmonary oedema (CXR-confirmed)
+   - Monitor urine output, electrolytes (K+, Na+) q6h
+   - Oral Furosemide 20mg OD after IV stabilization if needed
+
+─────────────────────────────────────────────────────────────────────────────
+PROCEDURAL PLAN
+─────────────────────────────────────────────────────────────────────────────
+
+A. URGENT ECHOCARDIOGRAM — Within 4 hours
+   - Assess LVEF (critical for guiding therapy and prognosis)
+   - Rule out mechanical complications: VSD, MR, tamponade
+   - Wall motion abnormality mapping to guide culprit vessel identification
+
+B. CORONARY ANGIOGRAPHY (CAG) — Within 24 hours (Early Invasive Strategy)
+   - GRACE ≥140 → Early Invasive Strategy mandated (ACC/AHA 2021 Class I)
+   - Radial artery access preferred (lower bleeding risk)
+   - Pre-procedural: IV Heparin, check renal function, HbA1c, INR
+   - Hold Metformin 48h post-contrast
+
+C. PERCUTANEOUS CORONARY INTERVENTION (PCI) — if CAG reveals culprit lesion
+   - Drug-Eluting Stent (DES) preferred
+   - Post-PCI: Continue DAPT (Aspirin + Clopidogrel for 12 months)
+   - Glycoprotein IIb/IIIa inhibitor (Tirofiban) — at operator discretion
+     if large thrombus burden or incomplete flow post-PCI
+
+─────────────────────────────────────────────────────────────────────────────
+MONITORING ORDERS
+─────────────────────────────────────────────────────────────────────────────
+- Continuous ECG telemetry monitoring (arrhythmia surveillance)
+- Vitals every 30 minutes (HR, BP, SpO2, RR)
+- Troponin I — repeat at 6h, 12h, 24h
+- Renal function panel, electrolytes — every 12 hours
+- Strict Input/Output monitoring — target net negative 500 mL/24h (diuresis)
+- Daily weight (pulmonary oedema tracking)
+- BG checks every 2 hours (sliding scale protocol)
+
+─────────────────────────────────────────────────────────────────────────────
+DIFFERENTIAL DIAGNOSES (CONSIDERED & EXCLUDED)
+─────────────────────────────────────────────────────────────────────────────
+1. STEMI — excluded: no ST elevation on ECG, no acute Q waves
+2. Aortic Dissection — excluded: pain character, no widened mediastinum on CXR, no
+   pulse differential
+3. Pulmonary Embolism — excluded: no pleuritic pain, no DVT signs, ECG has no
+   S1Q3T3 pattern, SpO2 only mildly reduced
+4. Unstable Angina — less likely given significantly elevated troponin
+
+─────────────────────────────────────────────────────────────────────────────
+PROGNOSIS & RISK COMMUNICATION
+─────────────────────────────────────────────────────────────────────────────
+- GRACE in-hospital mortality risk: ~8% (High Risk)
+- PCI, if successful, expected to reduce mortality by 30–40%
+- Modifiable risk factors addressed: BP control, glycaemic management, statin,
+  smoking cessation counselling initiated
+- Patient counselled on diagnosis, plan, and procedure risks. Consent obtained.
+
+─────────────────────────────────────────────────────────────────────────────
+FOLLOW-UP PLAN (POST-DISCHARGE — IF STABLE)
+─────────────────────────────────────────────────────────────────────────────
+- Discharge Day 4–5 (if PCI successful and haemodynamically stable)
+- Medications: Aspirin 75mg, Clopidogrel 75mg, Atorvastatin 80mg, Ramipril,
+  Metoprolol, resume Metformin after 48h if eGFR stable
+- Cardiac Rehab referral — Phase 2 outpatient programme
+- Echo repeat at 6 weeks post-discharge
+- Endocrinology referral for T2DM optimization (HbA1c 8.2%)
+- Lipid clinic referral — target LDL <70 mg/dL
+- Cardiology OPD — 1 week and 3 months post-discharge
+
+─────────────────────────────────────────────────────────────────────────────
+PHYSICIAN SIGNATURE
+─────────────────────────────────────────────────────────────────────────────
+Dr. Aisha Mehta  |  MD, DM Cardiology  |  MRCP (UK)
+Senior Consultant Cardiologist — CCU
+Notes finalized: April 10, 2024 — 06:30 AM

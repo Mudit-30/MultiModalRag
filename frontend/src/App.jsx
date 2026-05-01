@@ -4,82 +4,168 @@ import GraphVisualization from './components/GraphVisualization'
 import CitationPanel from './components/CitationPanel'
 import UploadZone from './components/UploadZone'
 import ExplainabilityPanel from './components/ExplainabilityPanel'
-import { Brain, Network, BookOpen, Upload, Activity, Wifi, WifiOff } from 'lucide-react'
+import { Brain, Network, BookOpen, Upload, Activity, Wifi, WifiOff, Layers } from 'lucide-react'
 import { checkHealth } from './lib/api'
+import useStore from './store/useStore'
 import './index.css'
 
 const TABS = [
-  { id: 'graph', label: 'Graph', icon: Network },
-  { id: 'citations', label: 'Citations', icon: BookOpen },
-  { id: 'trace', label: 'Agent Trace', icon: Activity },
-  { id: 'upload', label: 'Upload', icon: Upload },
+  { id: 'graph',     label: 'Knowledge Graph', icon: Network   },
+  { id: 'citations', label: 'Citations',        icon: BookOpen  },
+  { id: 'trace',     label: 'Agent Trace',      icon: Activity  },
+  { id: 'upload',    label: 'Ingest Data',      icon: Upload    },
 ]
 
 export default function App() {
   const [rightTab, setRightTab] = useState('graph')
   const [backendStatus, setBackendStatus] = useState('checking')
+  const { citations, trace } = useStore()
 
   useEffect(() => {
-    checkHealth()
-      .then(() => setBackendStatus('online'))
-      .catch(() => setBackendStatus('offline'))
+    const check = () =>
+      checkHealth()
+        .then(() => setBackendStatus('online'))
+        .catch(() => setBackendStatus('offline'))
+    check()
+    const id = setInterval(check, 15000)
+    return () => clearInterval(id)
   }, [])
 
+  // Auto-switch tabs when new data arrives
+  useEffect(() => { if (trace)     setRightTab('trace')     }, [trace])
+  useEffect(() => { if (citations?.length) setRightTab('citations') }, [citations])
+
+  const statusColor =
+    backendStatus === 'online'   ? '#4ade80' :
+    backendStatus === 'offline'  ? '#f87171' : '#94a3b8'
+
   return (
-    <div className="h-screen bg-gray-950 text-white flex flex-col overflow-hidden font-sans">
-      {/* Top Bar */}
-      <header className="flex items-center gap-3 px-6 py-3 border-b border-gray-800 flex-shrink-0">
-        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-600 to-violet-700 flex items-center justify-center">
-          <Brain className="w-4 h-4 text-white" />
+    <div style={{ height:'100vh', background:'var(--bg-base)', display:'flex', flexDirection:'column', overflow:'hidden' }}>
+      
+      {/* ── Top Bar ─────────────────────────────────────────────────────────── */}
+      <header style={{
+        display:'flex', alignItems:'center', gap:12,
+        padding:'10px 20px',
+        background:'var(--bg-surface)',
+        borderBottom:'1px solid var(--border)',
+        flexShrink:0,
+      }}>
+        {/* Logo */}
+        <div style={{
+          width:36, height:36, borderRadius:10,
+          background:'linear-gradient(135deg,#4f46e5,#7c3aed)',
+          display:'flex', alignItems:'center', justifyContent:'center',
+          boxShadow:'0 0 16px #6366f155',
+        }}>
+          <Brain size={18} color="#fff" />
         </div>
+
         <div>
-          <h1 className="text-sm font-bold text-white leading-none">Multi-Modal Graph RAG</h1>
-          <p className="text-xs text-gray-500 leading-none mt-0.5">Agentic · Hybrid Retrieval · Temporal KG</p>
+          <h1 style={{ fontSize:14, fontWeight:700, color:'var(--text-1)', lineHeight:1 }}>
+            Multi-Modal Graph RAG
+          </h1>
+          <p style={{ fontSize:11, color:'var(--text-3)', marginTop:2, lineHeight:1 }}>
+            Agentic · Hybrid Retrieval · Temporal Knowledge Graph
+          </p>
         </div>
-        <div className="ml-auto flex items-center gap-2">
-          <div className={`flex items-center gap-1.5 text-xs px-3 py-1 rounded-full border
-            ${backendStatus === 'online' ? 'border-green-800 bg-green-950/50 text-green-400' : 
-              backendStatus === 'offline' ? 'border-red-800 bg-red-950/50 text-red-400' :
-              'border-gray-700 bg-gray-900 text-gray-500'}`}>
-            {backendStatus === 'online' ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
-            {backendStatus}
+
+        {/* Tech chips */}
+        <div style={{ display:'flex', gap:6, marginLeft:16 }}>
+          {['Groq Llama 3.3', 'Qdrant', 'Neo4j', 'RRF Fusion'].map(t => (
+            <span key={t} className="chip indigo">{t}</span>
+          ))}
+        </div>
+
+        {/* Status */}
+        <div style={{ marginLeft:'auto', display:'flex', alignItems:'center', gap:6 }}>
+          <div style={{
+            display:'flex', alignItems:'center', gap:6,
+            fontSize:11, fontWeight:500,
+            padding:'4px 10px', borderRadius:99,
+            border:'1px solid',
+            borderColor: backendStatus === 'online' ? '#166534' : '#7f1d1d',
+            background: backendStatus === 'online' ? '#14532d33' : '#45101033',
+            color: statusColor,
+          }}>
+            <div style={{
+              width:6, height:6, borderRadius:9999,
+              background: statusColor,
+              boxShadow: backendStatus === 'online' ? `0 0 6px ${statusColor}` : 'none',
+            }} />
+            {backendStatus === 'online' ? 'API Online' : backendStatus === 'offline' ? 'API Offline' : 'Connecting…'}
           </div>
         </div>
       </header>
 
-      {/* Main Layout */}
-      <div className="flex-1 flex gap-0 overflow-hidden">
-        {/* Left: Chat — fixed width */}
-        <div className="w-[52%] flex flex-col p-4 border-r border-gray-800">
-          <ChatInterface />
+      {/* ── Main Layout ─────────────────────────────────────────────────────── */}
+      <div style={{ flex:1, display:'flex', overflow:'hidden' }}>
+
+        {/* Left: Chat */}
+        <div style={{
+          width:'50%', display:'flex', flexDirection:'column',
+          padding:12, borderRight:'1px solid var(--border)',
+        }}>
+          <ChatInterface onTabSwitch={setRightTab} />
         </div>
 
         {/* Right: Panels */}
-        <div className="flex-1 flex flex-col overflow-hidden">
+        <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden' }}>
+
           {/* Tab bar */}
-          <div className="flex border-b border-gray-800 px-2 pt-2 flex-shrink-0">
-            {TABS.map(({ id, label, icon: Icon }) => (
-              <button
-                key={id}
-                onClick={() => setRightTab(id)}
-                className={`flex items-center gap-1.5 text-xs px-3 py-2 rounded-t-lg mr-1 transition-colors
-                  ${rightTab === id
-                    ? 'bg-gray-900 text-indigo-400 border border-gray-700 border-b-gray-900'
-                    : 'text-gray-600 hover:text-gray-400'
-                  }`}
-              >
-                <Icon className="w-3.5 h-3.5" />
-                {label}
-              </button>
-            ))}
+          <div style={{
+            display:'flex', gap:2, padding:'8px 12px 0',
+            borderBottom:'1px solid var(--border)',
+            background:'var(--bg-surface)',
+            flexShrink:0,
+          }}>
+            {TABS.map(({ id, label, icon: Icon }) => {
+              const active = rightTab === id
+              return (
+                <button
+                  key={id}
+                  onClick={() => setRightTab(id)}
+                  style={{
+                    display:'flex', alignItems:'center', gap:6,
+                    fontSize:12, fontWeight: active ? 600 : 400,
+                    padding:'6px 14px',
+                    borderRadius:'8px 8px 0 0',
+                    border:'1px solid',
+                    borderBottom: active ? '1px solid var(--bg-elevated)' : '1px solid transparent',
+                    borderColor: active ? 'var(--border)' : 'transparent',
+                    background: active ? 'var(--bg-elevated)' : 'transparent',
+                    color: active ? 'var(--indigo-glow)' : 'var(--text-3)',
+                    cursor:'pointer', transition:'all .15s',
+                    marginBottom: active ? -1 : 0,
+                  }}
+                >
+                  <Icon size={13} />
+                  {label}
+                  {/* Badge */}
+                  {id === 'citations' && citations?.length > 0 && (
+                    <span style={{
+                      fontSize:9, fontWeight:700,
+                      background:'var(--indigo)', color:'#fff',
+                      padding:'1px 5px', borderRadius:99,
+                    }}>{citations.length}</span>
+                  )}
+                  {id === 'trace' && trace && (
+                    <span style={{
+                      fontSize:9, fontWeight:700,
+                      background:'#7c3aed', color:'#fff',
+                      padding:'1px 5px', borderRadius:99,
+                    }}>{trace.timeline?.length}</span>
+                  )}
+                </button>
+              )
+            })}
           </div>
 
           {/* Panel content */}
-          <div className="flex-1 overflow-hidden p-4">
-            {rightTab === 'graph' && <GraphVisualization />}
+          <div style={{ flex:1, overflow:'hidden', padding:12, background:'var(--bg-elevated)' }}>
+            {rightTab === 'graph'     && <GraphVisualization />}
             {rightTab === 'citations' && <CitationPanel />}
-            {rightTab === 'trace' && <ExplainabilityPanel />}
-            {rightTab === 'upload' && <UploadZone />}
+            {rightTab === 'trace'     && <ExplainabilityPanel />}
+            {rightTab === 'upload'    && <UploadZone />}
           </div>
         </div>
       </div>

@@ -1,18 +1,92 @@
-Radiology Report — Chest X-Ray
-Patient: John Doe | DOB: 1972-03-14 | Date: 2024-04-10
-Radiologist: Dr. Priya Sharma
+RADIOLOGY REPORT — CHEST X-RAY (PA VIEW)
+==========================================
+Patient:      John Doe  |  DOB: 1972-03-14  |  MRN: JD-2024-00412
+Date/Time:    April 10, 2024 — 03:15 AM
+Modality:     Chest X-Ray — Posteroanterior (PA) View + Lateral View
+Radiologist:  Dr. Priya Sharma, MD, DNB Radiodiagnosis
+Referring:    Dr. Aisha Mehta (CCU)
+Clinical Hx:  Chest pain, dyspnoea, ECG: NSTEMI pattern
 
-Findings:
-- Cardiac silhouette is mildly enlarged (cardiomegaly grade I).
-- No acute consolidation, pleural effusion, or pneumothorax identified.
-- Mild pulmonary vascular congestion is noted in the upper lobes, suggesting early left ventricular dysfunction.
-- Aortic knuckle appears normal.
-- Bony thorax is intact.
+─────────────────────────────────────────────────────────────────────────────
+TECHNICAL QUALITY
+─────────────────────────────────────────────────────────────────────────────
+Adequate inspiration. No rotation. Good penetration. Film diagnostic quality.
 
-Impression:
-1. Mild cardiomegaly — correlate with clinical symptoms of chest pain and ECG findings.
-2. Early signs of pulmonary venous hypertension — echocardiogram recommended.
-3. No acute pulmonary infiltrate or consolidation.
+─────────────────────────────────────────────────────────────────────────────
+FINDINGS — PA VIEW
+─────────────────────────────────────────────────────────────────────────────
 
-Recommendation:
-Echocardiogram for assessment of left ventricular ejection fraction (LVEF). Clinical correlation with troponin and ECG findings is strongly advised.
+CARDIAC SILHOUETTE:
+  - Cardiothoracic (CT) ratio: 0.57  [Normal: <0.50]
+  - Mild cardiomegaly (Grade I) — consistent with chronic pressure overload
+    from longstanding hypertension.
+  - Left ventricular configuration — suggesting LV dominance or hypertrophy.
+  - No pericardial effusion appreciated on current view.
+
+MEDIASTINUM:
+  - Superior mediastinum is not widened.
+  - Aortic knuckle appears prominent but within normal range for age.
+  - Trachea is central.
+  - No mediastinal shift.
+
+PULMONARY VASCULATURE:
+  - Increased vascular markings in bilateral upper zones (upper lobe diversion)
+    — a hallmark of pulmonary venous hypertension / early left heart failure.
+  - Mild haziness in bilateral perihilar regions — early alveolar pulmonary
+    oedema cannot be excluded, correlate clinically.
+  - Kerley B lines: faint short horizontal lines at costophrenic angles bilaterally
+    — suggestive of interstitial oedema.
+
+LUNG FIELDS:
+  - No frank consolidation, lobar collapse, or pneumothorax.
+  - No pleural effusion on PA view (small effusion may be masked in upright view).
+  - No cavitary lesion or mass.
+  - Lung apices clear bilaterally.
+
+BONY THORAX:
+  - Ribs, clavicles, and visible shoulder girdle appear intact.
+  - No fracture, lytic lesion, or destructive change seen.
+  - Thoracic vertebrae appear normal in outline.
+
+DIAPHRAGM:
+  - Right hemidiaphragm at normal level (anterior end of 5th rib).
+  - Left hemidiaphragm slightly lower — within normal range.
+  - Costophrenic angles: mildly blunted bilaterally (early fluid vs. pleural thickening).
+
+─────────────────────────────────────────────────────────────────────────────
+FINDINGS — LATERAL VIEW
+─────────────────────────────────────────────────────────────────────────────
+  - Retrosternal space appears within normal limits.
+  - No posterior costophrenic blunting.
+  - Retrocardiac density: mild — correlate with early LV enlargement.
+
+─────────────────────────────────────────────────────────────────────────────
+IMPRESSION
+─────────────────────────────────────────────────────────────────────────────
+1. MILD CARDIOMEGALY (CTR 0.57) — likely hypertensive heart disease; correlate
+   with echocardiographic LVEF for functional assessment.
+
+2. PULMONARY VENOUS HYPERTENSION — upper lobe diversion and perihilar haziness
+   indicate raised left atrial pressure; early left ventricular dysfunction likely.
+
+3. INTERSTITIAL PULMONARY OEDEMA — Kerley B lines noted bilaterally; clinical
+   correlation required; IV furosemide may be indicated.
+
+4. NO ACUTE CONSOLIDATION / PNEUMOTHORAX / PLEURAL EFFUSION (large) — acute
+   infective or primary pulmonary pathology is unlikely.
+
+─────────────────────────────────────────────────────────────────────────────
+RECOMMENDATIONS
+─────────────────────────────────────────────────────────────────────────────
+1. URGENT ECHOCARDIOGRAM — for left ventricular ejection fraction (LVEF)
+   assessment, wall motion abnormality, and valvular evaluation.
+2. Serial chest X-rays following diuretic therapy to monitor pulmonary oedema.
+3. Correlate with troponin trend, ECG findings, and clinical status.
+4. Cardiology team review recommended for further management.
+
+─────────────────────────────────────────────────────────────────────────────
+RADIOLOGIST SIGNATURE
+─────────────────────────────────────────────────────────────────────────────
+Dr. Priya Sharma  |  DNB Radiodiagnosis, FRCR (UK)
+Senior Radiologist — Cardiac Imaging
+Report finalized: April 10, 2024 — 04:00 AM
