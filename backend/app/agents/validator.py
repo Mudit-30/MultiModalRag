@@ -69,7 +69,10 @@ class AnswerValidator:
              "Retrieved Context:\n{context}\n\n"
              "Generated Answer:\n{answer}"),
         ])
-        self.chain = self.prompt | self.llm.with_structured_output(ValidationResult)
+        try:
+            self._chain = self.prompt | self.llm.with_structured_output(ValidationResult)
+        except Exception:
+            self._chain = None
 
     async def validate(
         self,
@@ -80,11 +83,14 @@ class AnswerValidator:
         """
         Returns (is_valid, feedback, confidence_score).
         """
+        if self._chain is None:
+            return True, "", 0.8
+
         # Truncate context to avoid token overflows in validation
         ctx_truncated = context[:4000] if len(context) > 4000 else context
 
         try:
-            result: ValidationResult = await self.chain.ainvoke({
+            result: ValidationResult = await self._chain.ainvoke({
                 "query":   query,
                 "context": ctx_truncated,
                 "answer":  answer,

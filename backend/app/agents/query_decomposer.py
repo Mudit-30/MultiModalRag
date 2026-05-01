@@ -13,9 +13,16 @@ class QueryDecomposer:
             ("system", "You are an expert query decomposer. Your task is to break down complex, multi-hop questions into simpler, manageable sub-queries that can be run sequentially or in parallel against a retrieval system. If a query is simple enough, just return it as a single element list."),
             ("human", "Decompose this query: {query}")
         ])
-        self.chain = self.prompt | self.llm.with_structured_output(SubQueries)
+        try:
+            self._chain = self.prompt | self.llm.with_structured_output(SubQueries)
+        except Exception:
+            self._chain = None
 
     async def decompose(self, query: str) -> List[str]:
-        # Invoke asynchronously
-        result = await self.chain.ainvoke({"query": query})
-        return result.queries
+        if self._chain is None:
+            return [query]
+        try:
+            result = await self._chain.ainvoke({"query": query})
+            return result.queries
+        except Exception:
+            return [query]

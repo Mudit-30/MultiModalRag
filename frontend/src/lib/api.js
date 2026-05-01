@@ -66,6 +66,12 @@ export async function scrapeUrl(url) {
   return res.json()
 }
 
+export async function resetMemory() {
+  const res = await fetch(`${API_URL}/ingest/reset`, { method: 'POST' })
+  if (!res.ok) throw new Error('Failed to reset memory')
+  return res.json()
+}
+
 // ── Health ─────────────────────────────────────────────────────────────────────
 export async function checkHealth() {
   const res = await fetch(`${API_URL}/health`, { signal: AbortSignal.timeout(5000) })

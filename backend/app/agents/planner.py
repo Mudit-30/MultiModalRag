@@ -17,7 +17,15 @@ class RetrievalPlanner:
             """),
             ("human", "Plan retrieval strategy for this query: {query}")
         ])
-        self.chain = self.prompt | self.llm.with_structured_output(RetrievalPlan)
+        try:
+            self._chain = self.prompt | self.llm.with_structured_output(RetrievalPlan)
+        except Exception:
+            self._chain = None
 
     async def plan(self, query: str) -> RetrievalPlan:
-        return await self.chain.ainvoke({"query": query})
+        if self._chain is None:
+            return RetrievalPlan(strategy="HYBRID", reasoning="Defaulting to HYBRID due to model compatibility.")
+        try:
+            return await self._chain.ainvoke({"query": query})
+        except Exception:
+            return RetrievalPlan(strategy="HYBRID", reasoning="Defaulting to HYBRID due to model compatibility.")

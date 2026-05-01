@@ -99,7 +99,13 @@ async def execute_hybrid_search(query: str, strategy: str = "HYBRID") -> Dict[st
         fused = rrf_fusion(dense_hits, sparse_hits)
     else:
         fused = []
+    
     logger.info("[Search] Fused: %d candidates", len(fused))
+    if fused:
+        for i, f in enumerate(fused[:3]):
+            logger.info(f"[Search] Top Candidate {i+1}: RRF={f.get('rrf_score', 0):.4f}, Text={f.get('text', '')[:100]}...")
+    else:
+        logger.warning("[Search] FUSED LIST IS EMPTY!")
 
     # ── 4. Graph traversal (HYBRID / GRAPH_ONLY) ──────────────────────────────
     graph_context = ""

@@ -17,9 +17,8 @@ from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
-LOCAL_STORAGE_PATH = os.path.join(
-    os.path.dirname(__file__), "..", "..", "data", "qdrant_local"
-)
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+LOCAL_STORAGE_PATH = os.path.join(PROJECT_ROOT, "data", "qdrant_local")
 
 
 class QdrantManager:
@@ -35,18 +34,21 @@ class QdrantManager:
         if self._client is None:
             # Try remote Docker first, fall back to local persistent
             try:
-                c = QdrantClient(
-                    host=settings.QDRANT_HOST,
-                    port=settings.QDRANT_PORT,
-                    timeout=3,
-                )
-                c.get_collections()   # connectivity test
-                self._client = c
-                logger.info("[Qdrant] Remote: %s:%s", settings.QDRANT_HOST, settings.QDRANT_PORT)
+                # Try remote first (Docker/Dev)
+                self._client = QdrantClient(host=settings.QDRANT_HOST, port=settings.QDRANT_PORT, timeout=5)
+                self._client.get_collections()
+                logger.info(f"Connected to Qdrant server at {settings.QDRANT_HOST}:{settings.QDRANT_PORT}")
             except Exception:
+                # Fallback to local storage
+                logger.info(f"Using local Qdrant storage at {LOCAL_STORAGE_PATH}")
                 os.makedirs(LOCAL_STORAGE_PATH, exist_ok=True)
-                self._client = QdrantClient(path=LOCAL_STORAGE_PATH)
-                logger.info("[Qdrant] Local persistent storage: %s", LOCAL_STORAGE_PATH)
+                try:
+                    self._client = QdrantClient(path=LOCAL_STORAGE_PATH)
+                    logger.info("Local Qdrant client initialized.")
+                except Exception as e:
+                    logger.error(f"FATAL: Could not initialize Qdrant client: {e}")
+                    raise
+            
             self._ensure_collection()
         return self._client
 
@@ -66,6 +68,15 @@ class QdrantManager:
             logger.info("[Qdrant] Collection exists: %s", self.collection_name)
 
     # ── Write ─────────────────────────────────────────────────────────────────
+
+    def reset(self):
+        """Wipe all memory from Qdrant."""
+        try:
+            self.client.delete_collection(self.collection_name)
+            self._ensure_collection()
+            logger.info("[Qdrant] Memory wiped.")
+        except Exception as e:
+            logger.error("[Qdrant] Reset error: %s", e)
 
     def insert_vectors(self, vectors: List[List[float]], payloads: List[Dict[str, Any]]):
         """Upsert embedding vectors with associated payloads."""

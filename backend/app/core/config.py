@@ -20,7 +20,8 @@ class Settings(BaseSettings):
     
     # LLM Settings
     GROQ_API_KEY: str = "your_groq_api_key_here"
+    OLLAMA_MODEL: str = "llama3.1"
     
-    model_config = SettingsConfigDict(env_file=".env", case_sensitive=True)
+    model_config = SettingsConfigDict(env_file=".env", case_sensitive=True, extra="ignore")
 
 settings = Settings()

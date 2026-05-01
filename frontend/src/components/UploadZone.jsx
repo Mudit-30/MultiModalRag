@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Database, FileText, CheckCircle2, Loader2, X, Upload, AlertCircle, Image, Music, FileSpreadsheet, Film } from 'lucide-react';
+import { Database, FileText, CheckCircle2, Loader2, X, Upload, AlertCircle, Image, Music, FileSpreadsheet, Film, Globe, Link } from 'lucide-react';
 import useStore from '../store/useStore';
 import { ingestDocuments } from '../lib/api';
 
@@ -87,7 +87,55 @@ export default function UploadZone() {
         <p className="text-slate-500 mt-1 text-sm">Upload documents to expand your private context window.</p>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-6">
+      <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-8">
+        {/* URL Ingestion */}
+        <div className="space-y-3">
+          <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3 ml-1 flex items-center gap-2 opacity-80">
+            <Globe size={12} className="text-cyan-600" /> Web Ingestion
+          </h4>
+          <div className="flex gap-2">
+            <div className="relative flex-1 group">
+              <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+                <Link size={14} className="text-slate-500 group-focus-within:text-cyan-500 transition-colors" />
+              </div>
+              <input 
+                type="text" 
+                placeholder="Enter URL to scrape (Wikipedia, documentation, blogs)..." 
+                className="w-full bg-[#050810] border border-white/5 rounded-xl pl-11 pr-4 py-3.5 text-sm text-slate-200 focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/20 transition-all placeholder:text-slate-600 shadow-inner"
+                onKeyDown={async (e) => {
+                  if (e.key === 'Enter' && e.target.value.trim()) {
+                    const url = e.target.value.trim();
+                    const input = e.target;
+                    setUploading(true);
+                    setError(null);
+                    try {
+                      const { scrapeUrl } = await import('../lib/api');
+                      await scrapeUrl(url);
+                      addUploadedFile({ 
+                        name: url, 
+                        size: 0, 
+                        uploadedAt: new Date().toISOString(), 
+                        status: 'indexed' 
+                      });
+                      input.value = '';
+                      setUploadStatus('success');
+                      setTimeout(() => setUploadStatus(null), 3000);
+                    } catch (err) {
+                      setError(err.message || "Failed to scrape URL");
+                    } finally {
+                      setUploading(false);
+                    }
+                  }
+                }}
+              />
+            </div>
+            <button className="px-6 bg-white/5 hover:bg-white/10 border border-white/5 rounded-xl text-slate-400 hover:text-white transition-all text-xs font-semibold shadow-lg">
+              Scrape
+            </button>
+          </div>
+          <p className="text-[10px] text-slate-600 ml-1 italic">Press Enter to start ingestion</p>
+        </div>
+
         {/* Drop zone */}
         <div
           onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}

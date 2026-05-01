@@ -35,7 +35,6 @@ def parse_pdf(file_bytes: bytes, filename: str = "document.pdf") -> List[Dict[st
         doc.close()
     except Exception as e:
         logger.error("PDF parse error: %s", e)
-        # Last resort: try raw decode
         pages = [{"text": file_bytes.decode("utf-8", errors="ignore"), "page": 1, "filename": filename}]
     return pages or [{"text": "(empty PDF)", "page": 1, "filename": filename}]
 
@@ -79,7 +78,13 @@ def parse_tabular(file_bytes: bytes, filename: str, file_ext: str) -> List[Dict[
         if file_ext in (".xlsx", ".xls"):
             df = pd.read_excel(io.BytesIO(file_bytes))
         else:
-            df = pd.read_csv(io.BytesIO(file_bytes))
+            # Try common encodings for CSV
+            for enc in ("utf-8", "latin-1", "cp1252"):
+                try:
+                    df = pd.read_csv(io.BytesIO(file_bytes), encoding=enc)
+                    break
+                except UnicodeDecodeError:
+                    continue
         # Convert dataframe to readable text chunks (one chunk per 50 rows)
         chunks = []
         chunk_size = 50
@@ -95,14 +100,13 @@ def parse_tabular(file_bytes: bytes, filename: str, file_ext: str) -> List[Dict[
 
 # ── Plain Text / Markdown / RTF ────────────────────────────────────────────────
 def parse_text(file_bytes: bytes, filename: str) -> List[Dict[str, Any]]:
-    try:
-        text = file_bytes.decode("utf-8")
-    except UnicodeDecodeError:
+    for encoding in ("utf-8", "utf-8-sig", "latin-1", "cp1252"):
         try:
-            text = file_bytes.decode("latin-1")
-        except Exception:
-            text = file_bytes.decode("utf-8", errors="ignore")
-    return [{"text": text, "page": 1, "filename": filename}]
+            text = file_bytes.decode(encoding)
+            return [{"text": text, "page": 1, "filename": filename}]
+        except (UnicodeDecodeError, LookupError):
+            continue
+    return [{"text": file_bytes.decode("utf-8", errors="replace"), "page": 1, "filename": filename}]
 
 
 # ── Main Router ────────────────────────────────────────────────────────────────
@@ -142,7 +146,7 @@ def detect_and_parse(
         return parse_tabular(file_bytes, filename, ext)
 
     # Plain text fallback (TXT, MD, JSON, XML, log, code, etc.)
-    if ct.startswith("text/") or ext in (".txt", ".md", ".json", ".xml", ".log", ".py", ".rst"):
+    if ct.startswith("text/") or ext in (".txt", ".md", ".json", ".xml", ".log", ".py", ".rst", ".rtf"):
         logger.info("Parsing as plain text: %s", filename)
         return parse_text(file_bytes, filename)
 

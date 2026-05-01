@@ -10,6 +10,7 @@ import time
 import signal
 import platform
 import subprocess
+import socket
 
 # ── Make sure stdout is not buffered ──────────────────────────────────────────
 os.environ.setdefault("PYTHONUNBUFFERED", "1")
@@ -44,6 +45,35 @@ def section(title):
     p(f"  {DIM}{'='*56}{R}")
     p(f"  {B}{CYN}{title}{R}")
     p(f"  {DIM}{'='*56}{R}")
+
+
+# ── Port helpers ──────────────────────────────────────────────────────────────
+def is_port_in_use(port: int) -> bool:
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        return s.connect_ex(("127.0.0.1", port)) == 0
+
+def kill_port(port: int):
+    """Kill whatever process is holding the port (Windows only)."""
+    if not WIN:
+        return
+    try:
+        result = subprocess.check_output(
+            ["netstat", "-ano"], text=True, stderr=subprocess.DEVNULL
+        )
+        for line in result.splitlines():
+            if f":{port}" in line and "LISTENING" in line:
+                pid = line.strip().split()[-1]
+                subprocess.call(
+                    ["taskkill", "/F", "/PID", pid],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                )
+                p(f"  {YLW}[!!]{R}  Freed port {port} (killed PID {pid})")
+                time.sleep(1)
+                break
+    except Exception:
+        pass
+
 
 # ── Pre-flight ────────────────────────────────────────────────────────────────
 def preflight():
@@ -80,18 +110,39 @@ def preflight():
         )
         ok("pip install done")
 
+    # Data directory
+    data_dir = os.path.join(ROOT, "data", "qdrant_local")
+    os.makedirs(data_dir, exist_ok=True)
+    ok(f"Data directory ready: data/")
+
+    # Clear stale ports
+    for port in [8000, 5173]:
+        if is_port_in_use(port):
+            warn(f"Port {port} already in use — attempting to free it...")
+            kill_port(port)
+            time.sleep(1)
+            if is_port_in_use(port):
+                warn(f"Could not free port {port}. You may need to close the occupying process manually.")
+            else:
+                ok(f"Port {port} is now free.")
+
+
 # ── Launch ────────────────────────────────────────────────────────────────────
 def start_backend():
     section("Starting Backend  -->  FastAPI + Uvicorn")
     info("API  :", "http://localhost:8000")
     info("Docs :", "http://localhost:8000/docs")
 
-    # Inherit stdout/stderr so output flows straight to terminal
+    # Build env: inherit everything, add PYTHONPATH so 'app.*' imports work
+    env = os.environ.copy()
+    env["PYTHONPATH"] = BACKEND
+
     proc = subprocess.Popen(
         [sys.executable, "-m", "uvicorn", "app.main:app",
-         "--reload", "--host", "127.0.0.1", "--port", "8000"],
+         "--host", "127.0.0.1", "--port", "8000",
+         "--log-level", "warning"],
         cwd=BACKEND,
-        # No PIPE -- let output go directly to this terminal
+        env=env,
     )
     ok(f"Backend started  (PID {proc.pid})")
     return proc
@@ -104,7 +155,6 @@ def start_frontend():
     proc = subprocess.Popen(
         [NPM, "run", "dev"],
         cwd=FRONTEND,
-        # No PIPE -- let output go directly to this terminal
     )
     ok(f"Frontend started  (PID {proc.pid})")
     return proc
@@ -153,8 +203,15 @@ def main():
     procs.append(backend)
 
     p()
-    p(f"  {DIM}Waiting 3s for backend to initialise ...{R}")
-    time.sleep(3)
+    p(f"  {DIM}Waiting 6s for backend to initialise ...{R}")
+    time.sleep(6)
+
+    # Check if backend crashed during startup
+    if backend.poll() is not None:
+        err(f"Backend failed to start (exit code {backend.returncode}). Check for port conflicts or import errors.")
+        sys.exit(1)
+
+    ok("Backend is healthy — starting frontend...")
 
     frontend = start_frontend()
     procs.append(frontend)

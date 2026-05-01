@@ -11,6 +11,7 @@ Pipeline:
   7. Return answer + citations + full trace
 """
 
+import os
 import asyncio
 import logging
 from typing import Dict, Any, List
@@ -56,23 +57,35 @@ class QueryOrchestrator:
 
     # ── Lazy-loaded LLMs ──────────────────────────────────────────────────────
     @property
-    def llm_smart(self) -> ChatGroq:
+    def llm_smart(self):
         if self._llm_smart is None:
-            self._llm_smart = ChatGroq(
+            primary = ChatGroq(
                 api_key=settings.GROQ_API_KEY,
                 model_name=GROQ_SMART_MODEL,
                 temperature=0.1,
             )
+            try:
+                from langchain_community.chat_models import ChatOllama
+                fallback = ChatOllama(model=os.getenv("OLLAMA_MODEL", "llama3.1"), temperature=0.1)
+                self._llm_smart = primary.with_fallbacks([fallback])
+            except ImportError:
+                self._llm_smart = primary
         return self._llm_smart
 
     @property
-    def llm_fast(self) -> ChatGroq:
+    def llm_fast(self):
         if self._llm_fast is None:
-            self._llm_fast = ChatGroq(
+            primary = ChatGroq(
                 api_key=settings.GROQ_API_KEY,
                 model_name=GROQ_FAST_MODEL,
                 temperature=0,
             )
+            try:
+                from langchain_community.chat_models import ChatOllama
+                fallback = ChatOllama(model=os.getenv("OLLAMA_MODEL", "llama3.1"), temperature=0)
+                self._llm_fast = primary.with_fallbacks([fallback])
+            except ImportError:
+                self._llm_fast = primary
         return self._llm_fast
 
     @property

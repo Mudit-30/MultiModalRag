@@ -9,6 +9,11 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
 )
+# Silence noisy libraries
+logging.getLogger("httpx").setLevel(logging.WARNING)
+logging.getLogger("sentence_transformers").setLevel(logging.WARNING)
+logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
+logging.getLogger("watchfiles").setLevel(logging.WARNING)
 
 app = FastAPI(
     title=settings.PROJECT_NAME,

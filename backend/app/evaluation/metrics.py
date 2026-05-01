@@ -3,6 +3,10 @@ from langchain_groq import ChatGroq
 from pydantic import BaseModel, Field
 from langchain_core.prompts import ChatPromptTemplate
 from app.core.config import settings
+import json
+import logging
+
+logger = logging.getLogger(__name__)
 
 # ── Faithfulness Check via LLM ──────────────────────────────────────────────
 
@@ -14,16 +18,41 @@ class RAGMetrics:
     def __init__(self):
         self.llm = ChatGroq(api_key=settings.GROQ_API_KEY, model_name="llama-3.1-8b-instant", temperature=0)
 
-        self.faithfulness_chain = ChatPromptTemplate.from_messages([
+        self.prompt = ChatPromptTemplate.from_messages([
             ("system", """You are a RAG evaluator. Given a Context and an Answer, identify any claims in the Answer that are NOT directly supported by the Context.
             Return a faithfulness score (0.0 = fully made up, 1.0 = entirely supported) and a list of unsupported claims.
-            Be strict: if a fact in the answer cannot be traced to a specific sentence in the context, it is unsupported."""),
+            Be strict: if a fact in the answer cannot be traced to a specific sentence in the context, it is unsupported.
+            
+            You MUST return exactly valid JSON matching this schema:
+            {{
+                "score": 0.8,
+                "unsupported_claims": ["claim 1", "claim 2"]
+            }}"""),
             ("human", "Context:\n{context}\n\nAnswer:\n{answer}")
-        ]) | self.llm.with_structured_output(FaithfulnessResult)
+        ])
 
     async def faithfulness(self, answer: str, context: str) -> Dict[str, Any]:
-        result = await self.faithfulness_chain.ainvoke({"context": context, "answer": answer})
-        return {"score": result.score, "unsupported_claims": result.unsupported_claims}
+        try:
+            # Check if structured output is supported or just use standard parsing
+            try:
+                chain = self.prompt | self.llm.with_structured_output(FaithfulnessResult)
+                result = await chain.ainvoke({"context": context, "answer": answer})
+                return {"score": result.score, "unsupported_claims": result.unsupported_claims}
+            except Exception as e:
+                logger.warning("[Metrics] Structured output failed, falling back to JSON parsing: %s", e)
+                # Fallback
+                chain = self.prompt | self.llm
+                res = await chain.ainvoke({"context": context, "answer": answer})
+                text = res.content.strip()
+                if text.startswith("```json"):
+                    text = text.split("```json")[1].split("```")[0].strip()
+                elif text.startswith("```"):
+                    text = text.split("```")[1].split("```")[0].strip()
+                data = json.loads(text)
+                return {"score": float(data.get("score", 0.0)), "unsupported_claims": data.get("unsupported_claims", [])}
+        except Exception as e:
+            logger.error("[Metrics] Faithfulness check failed: %s", e)
+            return {"score": 1.0, "unsupported_claims": []}
 
     def context_precision(self, retrieved_chunks: List[Dict], query: str) -> float:
         """

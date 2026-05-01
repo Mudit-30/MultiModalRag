@@ -40,12 +40,14 @@ class AudioProcessor:
             tmp_path = tmp.name
 
         try:
-            result = self.whisper_model.transcribe(tmp_path)
+            result = self.whisper_model.transcribe(tmp_path, fp16=False)
             transcript = result.get("text", "").strip()
+            if not transcript:
+                transcript = "(No speech detected in this audio file)"
             logger.info("Transcribed audio: %d chars", len(transcript))
         except Exception as e:
             logger.error("Whisper transcription failed: %s", e)
-            transcript = "(Audio transcription failed)"
+            transcript = f"(Audio transcription failed: {e})"
         finally:
             try:
                 os.remove(tmp_path)
@@ -53,6 +55,7 @@ class AudioProcessor:
                 pass
 
         # Embed transcript with BGE query prefix for better recall
+        transcript = f"Document File: {filename}\n\n{transcript}"
         embedding = self.embed_model.encode(
             [f"Represent this sentence for searching relevant passages: {transcript}"],
             normalize_embeddings=True,

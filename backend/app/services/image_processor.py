@@ -23,9 +23,9 @@ class ImageProcessor:
             self._embed_model = SentenceTransformer("BAAI/bge-small-en-v1.5")
         return self._embed_model
 
-    def generate_caption(self, image_bytes: bytes) -> str:
+    def generate_caption(self, image_bytes: bytes, filename: str = "image.jpg") -> str:
         """
-        Use Groq Vision (LLaMA 4 Scout) to generate a rich caption.
+        Use Groq Vision (LLaMA 3.2 Vision) to generate a rich caption.
         Falls back to image metadata description if API fails.
         """
         try:
@@ -45,7 +45,7 @@ class ImageProcessor:
 
             client = Groq(api_key=settings.GROQ_API_KEY)
             response = client.chat.completions.create(
-                model="meta-llama/llama-4-scout-17b-16e-instruct",
+                model="llama-3.2-11b-vision-preview",
                 messages=[{
                     "role": "user",
                     "content": [
@@ -57,9 +57,9 @@ class ImageProcessor:
                             "type": "text",
                             "text": (
                                 "Describe this image in detail. Extract ALL text visible in the image. "
-                                "Identify key entities, objects, data, charts, medical findings, or any "
-                                "structured information. Provide a comprehensive description that would "
-                                "allow someone to answer questions about this image without seeing it."
+                                "Identify key entities, objects, data, charts, or any structured information. "
+                                "Provide a comprehensive description that would allow someone to answer questions "
+                                "about this image without seeing it. If there is text, quote it exactly."
                             ),
                         },
                     ],
@@ -72,9 +72,9 @@ class ImageProcessor:
 
         except Exception as e:
             logger.warning("Vision API failed (%s) — using fallback description", e)
-            return self._fallback_description(image_bytes)
+            return self._fallback_description(image_bytes, filename)
 
-    def _fallback_description(self, image_bytes: bytes) -> str:
+    def _fallback_description(self, image_bytes: bytes, filename: str) -> str:
         """Generate basic description from image metadata using Pillow."""
         try:
             from PIL import Image
@@ -88,16 +88,17 @@ class ImageProcessor:
             colour_desc = mode_map.get(img.mode, img.mode)
             w, h = img.size
             return (
-                f"An image ({colour_desc}, {w}x{h} pixels). "
+                f"An image file named '{filename}' ({colour_desc}, {w}x{h} pixels). "
                 f"This is a visual document that may contain charts, diagrams, or photographs. "
                 f"Content could not be automatically extracted — please describe it manually."
             )
         except Exception:
-            return "An image file containing visual information."
+            return f"An image file named '{filename}' containing visual information."
 
     def process(self, image_bytes: bytes, filename: str = "image.jpg") -> Dict[str, Any]:
         """Full image pipeline: caption → embed."""
-        caption = self.generate_caption(image_bytes)
+        caption = self.generate_caption(image_bytes, filename=filename)
+        caption = f"Document File: {filename}\n\n{caption}"
         embedding = self.embed_model.encode(
             [f"Represent this sentence for searching relevant passages: {caption}"],
             normalize_embeddings=True,

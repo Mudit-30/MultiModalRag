@@ -33,7 +33,15 @@ class GraphExtractor:
             """),
             ("human", "Extract the graph from this text:\n\n{text}")
         ])
-        self.chain = self.prompt | self.llm.with_structured_output(GraphExtraction)
+        try:
+            self._chain = self.prompt | self.llm.with_structured_output(GraphExtraction)
+        except Exception:
+            self._chain = None
 
     async def extract(self, text: str) -> GraphExtraction:
-        return await self.chain.ainvoke({"text": text})
+        if self._chain is None:
+            return GraphExtraction(entities=[], relations=[])
+        try:
+            return await self._chain.ainvoke({"text": text})
+        except Exception:
+            return GraphExtraction(entities=[], relations=[])
