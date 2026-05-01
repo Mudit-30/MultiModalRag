@@ -1,225 +1,183 @@
 #!/usr/bin/env python3
 """
-run.py -- Start the Multi-Modal Graph RAG system (backend + frontend) with one command.
-Usage:  python run.py
+run.py  --  Start Multi-Modal Graph RAG (backend + frontend) with one command.
+Usage:      python run.py
 """
-import sys, io
-# Force UTF-8 output on Windows so ANSI / special chars don't crash
-if sys.platform == "win32":
-    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
-    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="replace")
 
-import subprocess
 import os
+import sys
 import time
 import signal
-import threading
 import platform
+import subprocess
 
-# ── Paths ─────────────────────────────────────────────────────────────────────
-ROOT    = os.path.dirname(os.path.abspath(__file__))
-BACKEND = os.path.join(ROOT, "backend")
+# ── Make sure stdout is not buffered ──────────────────────────────────────────
+os.environ.setdefault("PYTHONUNBUFFERED", "1")
+os.environ.setdefault("PYTHONIOENCODING", "utf-8")
+
+ROOT     = os.path.dirname(os.path.abspath(__file__))
+BACKEND  = os.path.join(ROOT, "backend")
 FRONTEND = os.path.join(ROOT, "frontend")
+WIN      = platform.system() == "Windows"
+NPM      = "npm.cmd" if WIN else "npm"
 
-IS_WINDOWS = platform.system() == "Windows"
+# ── Colours (safe ASCII only) ─────────────────────────────────────────────────
+R   = "\033[0m"
+B   = "\033[1m"
+CYN = "\033[96m"
+GRN = "\033[92m"
+YLW = "\033[93m"
+RED = "\033[91m"
+VIO = "\033[95m"
+DIM = "\033[2m"
 
-# ── ANSI colours ──────────────────────────────────────────────────────────────
-RESET  = "\033[0m"
-BOLD   = "\033[1m"
-CYAN   = "\033[96m"
-GREEN  = "\033[92m"
-YELLOW = "\033[93m"
-RED    = "\033[91m"
-VIOLET = "\033[95m"
-DIM    = "\033[2m"
+def p(msg=""):
+    print(msg, flush=True)
 
-def banner():
-    print(f"""
-{VIOLET}{BOLD}  ============================================================
-  Multi-Modal Graph RAG
-  Agentic  |  Hybrid Retrieval  |  Temporal Knowledge Graph
-  ============================================================{RESET}
-{CYAN}  Backend  ->  FastAPI  (Groq LLMs + Qdrant + Neo4j)
-  Frontend ->  React + Vite (Graph viz, Citations, Trace)
-{RESET}""")
-
-def info(tag, msg):
-    print(f"  {BOLD}{tag}{RESET}  {msg}")
-
-def ok(msg):
-    print(f"  {GREEN}[OK]{RESET}  {msg}")
-
-def warn(msg):
-    print(f"  {YELLOW}[!!]{RESET}  {msg}")
-
-def err(msg):
-    print(f"  {RED}[XX]{RESET}  {msg}")
+def ok(msg):   p(f"  {GRN}[OK]{R}  {msg}")
+def warn(msg): p(f"  {YLW}[!!]{R}  {msg}")
+def err(msg):  p(f"  {RED}[XX]{R}  {msg}")
+def info(k,v): p(f"  {B}{k}{R}  {v}")
 
 def section(title):
-    print(f"\n{DIM}{'='*60}{RESET}")
-    print(f"  {BOLD}{CYAN}{title}{RESET}")
-    print(f"{DIM}{'='*60}{RESET}")
+    p()
+    p(f"  {DIM}{'='*56}{R}")
+    p(f"  {B}{CYN}{title}{R}")
+    p(f"  {DIM}{'='*56}{R}")
 
-# ── Pre-flight checks ─────────────────────────────────────────────────────────
-
-def check_env():
+# ── Pre-flight ────────────────────────────────────────────────────────────────
+def preflight():
     section("Pre-flight Checks")
-    env_file = os.path.join(BACKEND, ".env")
-    if not os.path.exists(env_file):
-        warn(f".env not found at {env_file}")
-        warn("Backend will start but LLM features may fail without GROQ_API_KEY")
+
+    # .env
+    env_path = os.path.join(BACKEND, ".env")
+    if not os.path.exists(env_path):
+        warn(f"backend/.env not found  -->  LLM calls will fail without GROQ_API_KEY")
     else:
-        # Peek for key
-        with open(env_file) as f:
-            content = f.read()
-        if "GROQ_API_KEY" in content and "your_key" not in content:
+        txt = open(env_path).read()
+        if "GROQ_API_KEY" in txt and "your_key" not in txt:
             ok("GROQ_API_KEY found in backend/.env")
         else:
-            warn("GROQ_API_KEY may not be set in backend/.env")
+            warn("GROQ_API_KEY missing or placeholder in backend/.env")
 
-    # Check node_modules
-    nm = os.path.join(FRONTEND, "node_modules")
-    if not os.path.exists(nm):
-        warn("frontend/node_modules not found -- running npm install...")
-        subprocess.run(
-            ["npm", "install"],
-            cwd=FRONTEND,
-            shell=IS_WINDOWS,
-            check=True,
-        )
-        ok("npm install complete")
+    # node_modules
+    if not os.path.isdir(os.path.join(FRONTEND, "node_modules")):
+        warn("frontend/node_modules missing -- running npm install ...")
+        subprocess.run([NPM, "install"], cwd=FRONTEND, check=True)
+        ok("npm install done")
     else:
         ok("frontend/node_modules present")
 
-    # Check pip packages (fast check)
+    # Python packages
     try:
         import fastapi, uvicorn  # noqa: F401
-        ok("Python packages (fastapi, uvicorn) available")
+        ok("fastapi + uvicorn available")
     except ImportError:
-        warn("Some Python packages missing -- installing requirements.txt...")
+        warn("Missing Python packages -- running pip install ...")
         subprocess.run(
             [sys.executable, "-m", "pip", "install", "-r", "requirements.txt", "-q"],
-            cwd=BACKEND,
-            check=True,
+            cwd=BACKEND, check=True,
         )
-        ok("pip install complete")
+        ok("pip install done")
 
-# ── Stream process output with a prefix ──────────────────────────────────────
-
-def stream(proc, prefix, color):
-    """Read stdout/stderr from a process and print with coloured prefix."""
-    def _read(stream_):
-        for raw in iter(stream_.readline, b""):
-            line = raw.decode("utf-8", errors="replace").rstrip()
-            if line:
-                print(f"  {color}{BOLD}{prefix}{RESET}  {DIM}{line}{RESET}")
-    t1 = threading.Thread(target=_read, args=(proc.stdout,), daemon=True)
-    t2 = threading.Thread(target=_read, args=(proc.stderr,), daemon=True)
-    t1.start(); t2.start()
-
-# ── Launch processes ──────────────────────────────────────────────────────────
-
+# ── Launch ────────────────────────────────────────────────────────────────────
 def start_backend():
     section("Starting Backend  -->  FastAPI + Uvicorn")
-    info("Port", "http://localhost:8000")
-    info("Docs", "http://localhost:8000/docs")
+    info("API  :", "http://localhost:8000")
+    info("Docs :", "http://localhost:8000/docs")
 
-    cmd = [
-        sys.executable, "-m", "uvicorn",
-        "app.main:app",
-        "--reload",
-        "--port", "8000",
-        "--host", "127.0.0.1",
-    ]
+    # Inherit stdout/stderr so output flows straight to terminal
     proc = subprocess.Popen(
-        cmd,
+        [sys.executable, "-m", "uvicorn", "app.main:app",
+         "--reload", "--host", "127.0.0.1", "--port", "8000"],
         cwd=BACKEND,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        shell=False,
+        # No PIPE -- let output go directly to this terminal
     )
-    stream(proc, "BACKEND", VIOLET)
-    ok(f"Backend process started  (PID {proc.pid})")
+    ok(f"Backend started  (PID {proc.pid})")
     return proc
 
 
 def start_frontend():
     section("Starting Frontend  -->  Vite + React")
-    info("URL", "http://localhost:5173")
+    info("UI   :", "http://localhost:5173")
 
-    npm = "npm.cmd" if IS_WINDOWS else "npm"
     proc = subprocess.Popen(
-        [npm, "run", "dev"],
+        [NPM, "run", "dev"],
         cwd=FRONTEND,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        shell=False,
+        # No PIPE -- let output go directly to this terminal
     )
-    stream(proc, "FRONTEND", CYAN)
-    ok(f"Frontend process started  (PID {proc.pid})")
+    ok(f"Frontend started  (PID {proc.pid})")
     return proc
 
-# ── Graceful shutdown ─────────────────────────────────────────────────────────
-
-def shutdown(procs):
+# ── Shutdown ──────────────────────────────────────────────────────────────────
+def kill_all(procs):
     section("Shutting Down")
-    for p in procs:
-        if p and p.poll() is None:
-            info("Stopping", f"PID {p.pid}")
-            if IS_WINDOWS:
+    for proc in procs:
+        if proc and proc.poll() is None:
+            info("Stopping PID", str(proc.pid))
+            if WIN:
                 subprocess.call(
-                    ["taskkill", "/F", "/T", "/PID", str(p.pid)],
+                    ["taskkill", "/F", "/T", "/PID", str(proc.pid)],
                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
                 )
             else:
-                os.killpg(os.getpgid(p.pid), signal.SIGTERM)
-    ok("All processes stopped. Goodbye!")
-    sys.exit(0)
+                try:
+                    os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
+                except Exception:
+                    proc.terminate()
+    ok("All processes stopped.  Goodbye!")
 
 # ── Main ──────────────────────────────────────────────────────────────────────
-
 def main():
-    banner()
-    check_env()
+    p()
+    p(f"  {VIO}{B}============================================================{R}")
+    p(f"  {VIO}{B}  Multi-Modal Graph RAG{R}")
+    p(f"  {CYN}  Agentic  |  Hybrid Retrieval  |  Temporal Knowledge Graph{R}")
+    p(f"  {VIO}{B}============================================================{R}")
+
+    preflight()
 
     procs = []
 
-    # Register Ctrl-C handler
-    def handle_interrupt(sig, frame):
-        print(f"\n{YELLOW}  Interrupt received -- shutting down...{RESET}")
-        shutdown(procs)
+    def on_exit(sig, frame):
+        p()
+        warn("Interrupt -- shutting down ...")
+        kill_all(procs)
+        sys.exit(0)
 
-    signal.signal(signal.SIGINT, handle_interrupt)
+    signal.signal(signal.SIGINT, on_exit)
     if hasattr(signal, "SIGTERM"):
-        signal.signal(signal.SIGTERM, handle_interrupt)
+        signal.signal(signal.SIGTERM, on_exit)
 
-    # Start both services
-    backend_proc  = start_backend()
-    procs.append(backend_proc)
+    backend = start_backend()
+    procs.append(backend)
 
-    time.sleep(2)  # give backend a head-start
+    p()
+    p(f"  {DIM}Waiting 3s for backend to initialise ...{R}")
+    time.sleep(3)
 
-    frontend_proc = start_frontend()
-    procs.append(frontend_proc)
+    frontend = start_frontend()
+    procs.append(frontend)
 
     section("System Ready")
-    print(f"""
-  {GREEN}{BOLD}Both services are running!{RESET}
+    p(f"  {GRN}{B}Both services are running!{R}")
+    p()
+    p(f"  UI       -->  {CYN}http://localhost:5173{R}")
+    p(f"  API      -->  {CYN}http://localhost:8000{R}")
+    p(f"  Swagger  -->  {CYN}http://localhost:8000/docs{R}")
+    p()
+    p(f"  {DIM}Press Ctrl+C to stop everything{R}")
+    p()
 
-  {BOLD}API:{RESET}      {CYAN}http://localhost:8000{RESET}
-  {BOLD}Swagger:{RESET}  {CYAN}http://localhost:8000/docs{RESET}
-  {BOLD}UI:{RESET}       {CYAN}http://localhost:5173{RESET}
-
-  {DIM}Press Ctrl+C to stop everything{RESET}
-""")
-
-    # Wait — exit if either process dies
+    # Keep alive -- exit if a child process dies unexpectedly
     while True:
         time.sleep(1)
-        for p in procs:
-            if p.poll() is not None:
-                err(f"Process PID {p.pid} exited with code {p.returncode}")
-                shutdown(procs)
+        for proc in procs:
+            code = proc.poll()
+            if code is not None:
+                err(f"Process PID {proc.pid} exited unexpectedly (code {code})")
+                kill_all(procs)
+                sys.exit(1)
 
 
 if __name__ == "__main__":
