@@ -19,9 +19,9 @@
   --border:        rgba(255,255,255,0.05);
   --border-bright: rgba(255,255,255,0.12);
 
-  /* 4-colour system: dark, light, accent-1 (cyan), accent-2 (violet) */
-  --accent-1:  #22d3ee;  /* cyan  */
-  --accent-2:  #8b5cf6;  /* violet*/
+  /* 4-colour system */
+  --accent-1:  #22d3ee;  
+  --accent-2:  #8b5cf6;  
   --indigo:    #6366f1;
   --indigo-dim:#3730a3;
   --indigo-glow:#818cf8;
