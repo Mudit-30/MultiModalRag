@@ -8,86 +8,79 @@ This document provides a 100% comprehensive technical breakdown of the platform,
 
 ### System & Orchestration
 - **Docker & Docker Compose**: The entire application is containerized. The `docker-compose.yml` spins up 4 distinct containers on a unified bridge network (`ragnet`): 
-  1. Frontend (React)
-  2. Backend (FastAPI)
-  3. Qdrant (Vector Database)
-  4. Neo4j (Graph Database)
+  1. **Frontend**: React application served via Nginx.
+  2. **Backend**: FastAPI server handling logic and ML orchestration.
+  3. **Qdrant**: High-performance Vector Database (v1.9.0).
+  4. **Neo4j**: Graph Database (v5.12-community).
 
 ### Frontend (Client Layer)
-- **Framework**: React 18, bootstrapped with **Vite** for optimized Hot Module Replacement (HMR) and lightning-fast production builds.
-- **Styling & UI**: **Tailwind CSS** heavily customized to support a premium, dark-mode glassmorphic aesthetic. **Lucide React** is used for lightweight, consistent SVG iconography.
-- **Animation Engine**: **Framer Motion** (`motion/react`) handles complex layout transitions, the sliding sidebar, and `AnimatePresence` for unmounting components gracefully.
-- **State Management**: **Zustand** (`useStore`) is used for global state. It avoids Prop Drilling and allows independent view components (like the Chat, Graph, and Trace panels) to reactively sync with the backend data.
-- **Data Visualization**: **React Force Graph 2D** (built on D3.js) is custom-configured to render the physics-based Temporal Knowledge Graph, complete with node-collision algorithms and edge directional particles.
+- **Framework**: React 18, bootstrapped with **Vite** for optimized build performance.
+- **Styling**: **Tailwind CSS** with custom glassmorphic configurations and **shadcn/ui** components.
+- **Animation**: **Framer Motion** (`motion/react`) for layout transitions and interaction feedback.
+- **State Management**: **Zustand** for a lightweight, reactive global state store.
+- **Data Visualization**: **React Force Graph 2D** (D3-based) for the physics-enabled Knowledge Graph view.
+- **Icons**: **Lucide React**.
 
 ### Backend (API & Logic Layer)
-- **Framework**: **FastAPI** (Python 3.10+), utilizing asynchronous `async/await` syntax for high-concurrency request handling.
-- **Server**: **Uvicorn** handles ASGI processing.
-- **API Architecture**: Modular routing system separating `/ingest` (data processing) and `/query` (agentic reasoning). Uses **Pydantic** models for strict request/response validation.
+- **Framework**: **FastAPI** (Python 3.11), utilizing `async/await` for non-blocking I/O.
+- **Orchestration**: **LangChain** for the ReAct agent framework and tool-binding.
+- **Validation**: **Pydantic v2** for strict schema enforcement.
+- **Retrieval Fusion**: Custom implementation of **BM25** (via `rank-bm25`) combined with Vector Search.
 
 ---
 
 ## 2. Databases & Retrieval Systems
 
-To achieve "Hybrid RAG", we use two distinct database engines:
-
 ### A. Qdrant (Vector Database)
-- **Purpose**: Stores high-dimensional mathematical representations (Embeddings) of data for Semantic Similarity Search. 
-- **Implementation**: We run a local Dockerized instance (`v1.9.0`). The `qdrant_manager.py` custom code handles batch upserts, creating collections, and performing nearest-neighbor (`cosine` similarity) searches on both sparse (BM25) and dense vectors.
+- **Purporse**: Stores 384-dimensional dense vectors for semantic similarity.
+- **Implementation**: Uses `Cosine` distance metrics. Payloads store metadata including `modality`, `filename`, and `page_number` for precise citations.
 
 ### B. Neo4j (Graph Database)
-- **Purpose**: Stores extracted Knowledge Graphs (Entities and Relationships) to allow multi-hop reasoning (e.g., tracing a symptom to a disease to a treatment).
-- **Implementation**: We run `neo4j:5.12-community`. The `neo4j_manager.py` script uses the official Python driver to execute dynamic **Cypher** queries. 
+- **Purpose**: Stores the structured Knowledge Graph extracted from unstructured data.
+- **Implementation**: The `neo4j_manager.py` uses the official Python driver to execute dynamic Cypher queries. It maps Entities (Nodes) and Relationships (Edges) with properties linking back to the original source chunks.
 
 ---
 
 ## 3. The Multi-Modal Processors & AI Models
 
-The backend utilizes specialized processors to handle 3 distinct modalities, unifying them into textual schemas for the RAG pipeline.
+| Modality | Task | Specific Model | Engine / Source |
+| :--- | :--- | :--- | :--- |
+| **Agentic Brain** | Orchestration | `llama-3.1-70b-versatile` | Groq Cloud |
+| **Fast Reasoning** | Planning | `llama-3.1-8b-instant` | Groq Cloud |
+| **Text** | Embeddings | `BAAI/bge-small-en-v1.5` | Local (Sentence-Transformers) |
+| **Images** | Vision/OCR | `llama-3.2-11b-vision-preview` | Groq Cloud |
+| **Audio** | Transcription | `whisper-base` | Local (OpenAI-Whisper) |
+| **Graph** | Extraction | `llama-3.1-8b-instant` | Groq Cloud |
 
-### 1. Document & Text Processor (`text_processor.py`)
-- **Libraries Used**: `PyMuPDF` (`fitz`) and `pdfplumber`.
-- **Logic**: Custom chunking algorithms split large documents into overlapping windows to preserve context.
-- **Embedding Model**: Uses **`BAAI/bge-small-en-v1.5`** (via `sentence-transformers`). This runs entirely locally to encode text into 384-dimensional dense vectors.
-
-### 2. Image & Vision Processor (`image_processor.py`)
-- **Libraries Used**: Base64 encoding and `Pillow` (PIL) for metadata fallbacks.
-- **Vision Model**: Integrates the **Groq Vision API** powered by **`meta-llama/llama-4-scout-17b-16e-instruct`**. 
-- **Logic**: When an image is uploaded, the vision model generates a highly descriptive caption extracting charts, medical findings, and text. This caption is then embedded into Qdrant as if it were a text document.
-
-### 3. Audio & Video Processor (`audio_processor.py`)
-- **Libraries Used**: `pydub` and `ffmpeg` for audio normalization and temporal chunking.
-- **Transcription Model**: Utilizes **Groq Whisper (`whisper-large-v3`)**.
-- **Logic**: Audio files are transcribed into precise text transcripts, which are then chunked and embedded into Qdrant.
+### Ingestion Logic:
+1. **Document Processor**: Uses `PyMuPDF` for structural parsing and `RecursiveCharacterTextSplitter` (800 char chunks, 150 overlap).
+2. **Image Processor**: Converts images to Base64 and sends them to the **Groq Vision API (LLaMA 3.2)**. The generated caption extracts text, data points, and visual descriptions.
+3. **Audio Processor**: Utilizes local **OpenAI Whisper** for high-fidelity transcription.
 
 ---
 
-## 4. Custom LangChain Orchestrator & Agentic Workflow
+## 4. Agentic Workflow (The "Brain")
 
-The "Brain" of the platform is the custom-coded Agentic Orchestrator (`orchestrator.py`), which completely replaces standard, hardcoded RAG pipelines.
+The platform uses a **ReAct (Reasoning + Acting)** agent loop implemented in `orchestrator.py`.
 
-### The ReAct Agent Loop
-We use **LangChain** to construct a **ReAct (Reasoning and Acting)** agent.
-- **LLM Engine**: Powered by **Groq (`llama-3.1-8b-instant`)** for near-zero latency reasoning.
-- **The Loop**: Instead of immediately answering, the LLM is placed in a `while` loop where it must output a "Thought" (e.g., "I need to search for X"), select a "Tool", and parse the "Observation". It continues this loop until it reaches a final answer.
+### Step-by-Step Execution:
+1. **Query Decomposition**: The query is broken into sub-components (e.g., "Find X" and "Link X to Y").
+2. **Dynamic Planning**: The `planner.py` selects the best strategy (Vector, Graph, or Hybrid).
+3. **Tool Execution**:
+   - `VectorSearchTool`: Semantic retrieval from Qdrant.
+   - `GraphSearchTool`: Entity/Relation traversal in Neo4j.
+   - `WebSearchTool`: Live fallback via **Firecrawl**.
+4. **SRLM Self-Reward Loop**: The generated answer is validated by a secondary agent. If inaccuracies or missing citations are found, it is sent back for regeneration (up to 3 retries).
 
-### Custom Tools Bound to the Agent:
-1. **`VectorSearchTool`**: Triggers a semantic search against the Qdrant database to retrieve relevant document chunks, image captions, or audio transcripts.
-2. **`GraphSearchTool`**: Automatically generates and executes Cypher queries against Neo4j to pull network schemas and relationships.
-3. **`WebSearchTool`**: Uses the **Firecrawl API**. If internal databases fail to provide the answer, the agent autonomously generates a web search query, scrapes live HTML, parses the DOM, and feeds the live context back into its reasoning loop.
 
----
-
-## 5. Background Graph Extraction Pipeline
-
-Building a Knowledge Graph manually is impossible. We custom-coded an automated **Graph Extractor** (`graph_extractor.py`).
-- **How it works**: When files are ingested, FastAPI triggers a `BackgroundTask`.
-- **The LLM**: `llama-3.1-8b-instant` is prompted with rigorous few-shot examples to read the text chunks and output a strict JSON schema identifying `Nodes` (Entities) and `Edges` (Relationships).
-- **The Integration**: The backend dynamically translates this JSON into Cypher `MERGE` statements, incrementally expanding the Neo4j database in real-time as users upload data.
+### Transparency Layer:
+The frontend intercepts the agent's internal trace and renders it in the **Explainability Panel**, allowing users to see exactly which documents and tools the AI used to reach its conclusion.
 
 ---
 
-## Summary of Unique Technical Achievements
-1. **Fully Local Hybrid Search Architecture**: Integrating Qdrant and Neo4j simultaneously.
-2. **Multi-Modal Normalization**: Seamlessly treating Images and Audio as queryable text via scout and whisper models.
-3. **Agentic Transparency**: The React frontend successfully intercepts the LangChain execution trace and visually renders it in the `ExplainabilityPanel.jsx`, giving users 100% visibility into the AI's tool usage and preventing hallucinations.
+## 5. Docker & Deployment
+
+- **Networking**: All services reside on the `ragnet` bridge network.
+- **Health Checks**: The Backend service waits for Qdrant and Neo4j to be `healthy` before starting.
+- **Persistence**: Data is stored in persistent Docker volumes (`qdrant_data`, `neo4j_data`).
+

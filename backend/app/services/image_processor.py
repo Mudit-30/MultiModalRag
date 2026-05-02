@@ -32,6 +32,9 @@ class ImageProcessor:
             from groq import Groq
             from app.core.config import settings
 
+            if not settings.GROQ_API_KEY or "your_key" in settings.GROQ_API_KEY:
+                raise ValueError("GROQ_API_KEY is not configured")
+
             b64 = base64.b64encode(image_bytes).decode("utf-8")
 
             # Detect MIME type from magic bytes
@@ -45,7 +48,7 @@ class ImageProcessor:
 
             client = Groq(api_key=settings.GROQ_API_KEY)
             response = client.chat.completions.create(
-                model="llama-3.2-11b-vision-preview",
+                model="meta-llama/llama-4-scout-17b-16e-instruct",
                 messages=[{
                     "role": "user",
                     "content": [
@@ -71,10 +74,10 @@ class ImageProcessor:
             return caption
 
         except Exception as e:
-            logger.warning("Vision API failed (%s) — using fallback description", e)
-            return self._fallback_description(image_bytes, filename)
+            logger.error("[Vision API Failure] Filename: %s, Error: %s", filename, str(e))
+            return self._fallback_description(image_bytes, filename, error=str(e))
 
-    def _fallback_description(self, image_bytes: bytes, filename: str) -> str:
+    def _fallback_description(self, image_bytes: bytes, filename: str, error: str = "") -> str:
         """Generate basic description from image metadata using Pillow."""
         try:
             from PIL import Image
@@ -87,13 +90,17 @@ class ImageProcessor:
             }
             colour_desc = mode_map.get(img.mode, img.mode)
             w, h = img.size
+            
+            reason = f" (API Error: {error})" if error else ""
             return (
                 f"An image file named '{filename}' ({colour_desc}, {w}x{h} pixels). "
                 f"This is a visual document that may contain charts, diagrams, or photographs. "
-                f"Content could not be automatically extracted — please describe it manually."
+                f"Content could not be automatically extracted via Groq Vision{reason}. "
+                f"Please manually describe this image if it contains critical information."
             )
         except Exception:
-            return f"An image file named '{filename}' containing visual information."
+            return f"An image file named '{filename}' containing visual information. (Extraction Failed: {error})"
+
 
     def process(self, image_bytes: bytes, filename: str = "image.jpg") -> Dict[str, Any]:
         """Full image pipeline: caption → embed."""
