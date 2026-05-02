@@ -22,7 +22,7 @@ from app.agents.planner import RetrievalPlanner
 from app.agents.validator import AnswerValidator
 from app.api.endpoints.search_logic import execute_hybrid_search
 from app.cache.semantic_cache import semantic_cache
-from app.core.config import settings
+from app.core.config import settings 
 
 logger = logging.getLogger(__name__)
 

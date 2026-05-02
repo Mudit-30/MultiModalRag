@@ -180,7 +180,7 @@ export default function App() {
       let result
 
       if (hasUrls) {
-        // Scrape each URL then query against scraped + stored context
+        // Scrape each URL then query against scraped plus stored context
         addMessage({ role: 'assistant', content: `🌐 Scraping ${urls.length} URL${urls.length > 1 ? 's' : ''}…`, id: (Date.now() + 0.5).toString(), isStatus: true })
         await Promise.all(urls.map(u => scrapeUrl(u).catch(() => null)))
         result = await queryAgentic(pureQ || q)
